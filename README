@@ -1,8 +1,12 @@
 
-Setting up MPI Project with Eclipse PTP:
-----------------------------------------
+Setting up MPI Project with Eclipse:
+------------------------------------
 
 I am using VMWare Fusion 8.1 on OSX 10.9 running Ubuntu 14.04.5.
+
+Suggested installation approach: follow the steps below, then clone this repo into
+your Eclipse workspace/ folder. Then do 
+file --> Import --> General --> Existing Projects into workspace
 
 1. Download and install OpenMPI
     $ cd ~/Downloads && wget https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.1.tar.gz
@@ -58,7 +62,7 @@ I am using VMWare Fusion 8.1 on OSX 10.9 running Ubuntu 14.04.5.
      $ sudo apt-get install git
    - Python Matplotlib for quick results plotting 
      $ sudo apt-get install python-matplotlib
-   - GDB dashboard nice GDB interface
+   - GDB dashboard, nice GDB interface
      $ wget -P ~ git.io/.gdbinit
 
     
