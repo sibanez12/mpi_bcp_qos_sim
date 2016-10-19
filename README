@@ -1,0 +1,65 @@
+
+Setting up MPI Project with Eclipse PTP:
+----------------------------------------
+
+I am using VMWare Fusion 8.1 on OSX 10.9 running Ubuntu 14.04.5.
+
+1. Download and install OpenMPI
+    $ cd ~/Downloads && wget https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.1.tar.gz
+    $ tar -xzvf openmpi-2.0.1.tar.gz
+    $ cd openmpi-*
+    note: this directory contains all of the OpenMPI source code. So if we decide to look at the
+          implementation, this is where we will go
+    $ sudo apt-get install g++
+    $ sudo apt-get install valgrind
+    $ ./configure --prefix="/home/$USER/.openmpi" --enable-mpi-thread-multiple --enable-debug --enable-memchecker
+    note: we will use the --enable-debug and --enable-memchecker flags only for the OpenMPI installations on
+          our laptops. They introduce a performance hit so we won't use them when doing performance testing.
+    $ make
+    $ make install
+    - Add the following lines to you ~/.bashrc file
+    export PATH="/home/$USER/.openmpi/bin:$PATH"
+    export LD_LIBRARY_PATH="/home/$USER/.openmpi/lib/:$LD_LIBRARY_PATH"
+
+
+2. Download and install Eclipse PTP:
+    - Navigate to: http://www.eclipse.org/downloads/packages/eclipse-parallel-application-developers/neonr
+    - Select Linux 64-bit on the right then download
+    - Donate $100 to the Eclipse Community because it is a great tool
+    - Unpack tarball
+      $ tar -xzvf eclipse-parallel-neon-R-linux-gtk-x86_64.tar.gz
+    - Install java 8 JRE/JDK because it is required for Eclipse
+      $ sudo apt-add-repository ppa:webupd8team/java
+      $ sudo apt-get update
+      $ sudo apt-get install oracle-java8-installer
+    - Add the following line to your ~/.bashrc file:
+      $ export JAVA_HOME=/usr/lib/jvm/java-8-oracle    
+    - Add the following line to your bashrc file
+      alias eclipse=~/Downloads/eclipse/eclipse
+    - source ~/.bashrc and start eclipse
+    - pick your desired worspace, I just left mine as the default in my home directory
+
+3. Start up a sample MPI Project
+    - New --> C Project --> MPI Hello World C Project 
+    - Pick project name (i.e. MPI_Hello_World)
+    - Linux GCC Toolchain
+    - Leave all other defaults
+    - open MPI_Hello_world.c in Project Explorer
+    - click the hammer to build
+    - You can set up a run/debug configuration to run the MPI program from within Eclipse.
+      Or you can run from the command line, which is what I like to do.
+      $ cd ~/workspace/MPI_Hello_World/Debug
+      $ mpirun -n 4 ./MPI_Hello_World
+      See the mpirun manpage for details about how to use it: 
+        -https://www.open-mpi.org/doc/v2.0/man1/mpirun.1.php
+
+4. Other things to install:
+   - git
+     $ sudo apt-get install git
+   - Python Matplotlib for quick results plotting 
+     $ sudo apt-get install python-matplotlib
+   - GDB dashboard nice GDB interface
+     $ wget -P ~ git.io/.gdbinit
+
+    
+
