@@ -12,13 +12,16 @@ file --> Import --> General --> Existing Projects into workspace
     $ cd ~/Downloads && wget https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.1.tar.gz
     $ tar -xzvf openmpi-2.0.1.tar.gz
     $ cd openmpi-*
-    note: this directory contains all of the OpenMPI source code. So if we decide to look at the
-          implementation, this is where we will go
+    note: this directory contains all of the OpenMPI source code. 
+          So if we decide to look at the implementation, this is 
+          where we will go
     $ sudo apt-get install g++
     $ sudo apt-get install valgrind
     $ ./configure --prefix="/home/$USER/.openmpi" --enable-mpi-thread-multiple --enable-debug --enable-memchecker
-    note: we will use the --enable-debug and --enable-memchecker flags only for the OpenMPI installations on
-          our laptops. They introduce a performance hit so we won't use them when doing performance testing.
+    note: we will use the --enable-debug and --enable-memchecker 
+          flags only for the OpenMPI installations on our laptops. 
+          They introduce a performance hit so we won't use them when 
+          doing performance testing.
     $ make
     $ make install
     - Add the following lines to you ~/.bashrc file
