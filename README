@@ -81,6 +81,16 @@ client processes send REQUEST messages to the server entity on the other
 host and the server entity sends back an ACK message to the originating
 client process. 
 
+The simulation will run for 10 seconds then the python script wrapper
+will send a SIGUSR1 signal to mpirun which will then forward that signal
+to all MPI processes in the job. The MPI processes will catch the
+SIGUSR1 signal and dump their statistics. After 5 more seconds, the 
+python script wrapper will send a SIGTERM signal which kills all 
+processs and the simulation terminates. The python script wrapper will
+then parse the log files from the simulation and do some aggregation
+computations. After all simulations in the run have completed the
+python script wrapper will create a plot of the average throughput and 
+average latency in the plots/ directory.
     
 ##############################
 ##### USAGE INSTRUCTIONS #####
@@ -90,8 +100,7 @@ Run "./runSimsRange -h" to see the simulation parameters and a description of th
 
 Example:
   - Run experiment 4 times with serverProcessingTime ranging from 1 by 1 up to (but not including) 5
-    $ ./runSimsRange --clientThreadsPerHost 1 --serverThreadsPerHost 1 --serverProcessingTime 1:1:5 --clientReqPerHost 1 --clientReqGrpSize 100 --coresForHPThreads 1 --serverType MPI_THREAD_SINGLE
-
+    $ ./runSimsRange --clientThreadsPerHost 1 --serverThreadsPerHost 1 --serverProcessingTime 1:1:4 --clientReqPerHost 1 --clientReqGrpSize 10 --coresForHPThreads 1 --serverType MPI_THREAD_SINGLE
 
 
 
