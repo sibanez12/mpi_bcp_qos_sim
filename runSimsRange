@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+import sys, argparse
+from run_sim import run_sim, run_sims_range
+
+
+import sys, argparse
+from run_sim import run_sim
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clientThreadsPerHost", type=str, default="1",
+        help="The number of single threaded client processes to run on each host")
+    parser.add_argument("--serverThreadsPerHost", type=str, default="1",
+        help="The number of server threads to run on each host")
+    parser.add_argument("--serverProcessingTime", type=str, default="1",
+        help="The number of work units for the server threads to perform after receiving a message")
+    parser.add_argument("--clientReqPerHost", type=str, default="1",
+        help="The number of outstanding client requests on each node")
+    parser.add_argument("--clientReqGrpSize", type=str, default="100",
+        help="The size of the request group for which a measurement will be taken")
+    parser.add_argument("--coresForHPThreads", type=str, default="1",
+        help="The number of cores to reserve for processing high priority messages on each host")
+    parser.add_argument("--serverType", type=str, default="MPI_THREAD_SINGLE",
+        help="The type of server we want to use. Options: MPI_THREAD_SINGLE, MPI_THREAD_FUNNELED, MPI_THREAD_MULTIPLE")
+
+    try:
+        args = parser.parse_args()
+    except:
+        print >> sys.stderr, "ERROR: failed to parse command line options"
+        sys.exit(2)
+
+    argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost, 
+               'serverThreadsPerHost': args.serverThreadsPerHost, 
+               'serverProcessingTime': args.serverProcessingTime, 
+               'clientReqPerHost': args.clientReqPerHost, 
+               'clientReqGrpSize': args.clientReqGrpSize, 
+               'coresForHPThreads': args.coresForHPThreads, 
+               'serverType': args.serverType}
+
+
+    run_sims_range(args, argsMap)
+    
+
+
+
+if __name__ == "__main__":
+    main()
+
