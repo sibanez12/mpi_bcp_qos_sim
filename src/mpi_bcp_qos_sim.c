@@ -60,15 +60,16 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 	int numClients = numHosts*clientThreadsPerHost;
 	int numServers = numHosts; // assuming one server per host
 	clientMap = malloc(sizeof(entityEntry)*numClients);
-	serverMap = malloc(sizeof(entityEntry)*numServers);
+	serverMap = malloc(sizeof(serverEntry)*numServers);
 	int clientProcsPerClient = 1; // single threaded client processes
 	initializeEntityMap(clientMap, numClients, clientProcsPerClient);
-	int serverProcsPerServer = 	serverThreadsPerHost;
-	initializeEntityMap(serverMap, numServers, serverProcsPerServer);
+	int numLPThreads = 	serverThreadsPerHost - coresForHPThreads;
+	int numHPThreads = coresForHPThreads;
+	initializeServerMap(serverMap, numServers, numLPThreads, numHPThreads);
 
 	// set the rankMap instanceMap, client/server Maps
 	configMaps(rankMap, clientMap, serverMap, numProcs, clientThreadsPerHost,
-			 serverThreadsPerHost);
+			 serverThreadsPerHost, coresForHPThreads);
 
 	/* Create high priority / low priority communicators
 	 */
@@ -103,7 +104,7 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 		fprintf(fp, "----------------------\nClient Map: \n");
 		writeEntityMap(fp, clientMap, numClients, clientProcsPerClient);
 		fprintf(fp, "----------------------\nServer Map: \n");
-		writeEntityMap(fp, serverMap, numServers, serverProcsPerServer);
+		writeServerMap(fp, serverMap, numServers, numHPThreads, numLPThreads);
 		fclose(fp);
 	}
 
@@ -127,7 +128,7 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 
 	free(rankMap);
 	freeEntityMap(clientMap, numClients);
-	freeEntityMap(serverMap, numServers);
+	freeServerMap(serverMap, numServers);
 	/* Will kill the simulation with a signal */
 	while(True){
 		sleep(5);
@@ -140,7 +141,7 @@ int main (int argc, char **argv)
 {
 	// Default parameter settings
 	char *clientThreadsPerHost_s = "1";
-	char *serverThreadsPerHost_s = "1";
+	char *serverThreadsPerHost_s = "3";
 	char *serverProcessingTime_s = "10";
 	char *clientReqPerHost_s = "1";
 	char *clientReqGrpSize_s = "100";
@@ -239,7 +240,7 @@ int main (int argc, char **argv)
 	coresForHPThreads = strtol(coresForHPThreads_s, &ptr, base);
 
 	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverProcessingTime >= 0 &&
-			clientReqPerHost > 0 && clientReqGrpSize > 0 && coresForHPThreads > 0);
+			clientReqPerHost > 0 && clientReqGrpSize > 0 && coresForHPThreads >= 0);
 
 	DEBUG_PRINT(("clientThreadsPerHost = %d, "
 			"serverThreadsPerHost = %d, "

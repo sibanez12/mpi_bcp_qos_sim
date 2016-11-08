@@ -56,19 +56,27 @@ typedef struct rankEntry_s {
 } rankEntry;
 
 
-/* Used for the clientMap, serverMap */
+/* Used for the clientMap */
 typedef struct entityEntry_s {
 	int hostID;
 	int *ranks;
 	int count;
 } entityEntry;
 
+typedef struct serverEntry_s {
+	int hostID;
+	int *HPranks;
+	int HPcount;
+	int *LPranks;
+	int LPcount;
+} serverEntry;
+
 //// global variables /////
 int threadSupport;
 MPI_Datatype mpi_message_type;
 rankEntry *rankMap;
 entityEntry *clientMap;
-entityEntry *serverMap;
+serverEntry *serverMap;
 MPI_Comm highPriority_comm;
 MPI_Comm lowPriority_comm;
 ///////////////////////////
@@ -92,12 +100,16 @@ int getFirstOne(bitVector *bitVec);
 //////////////////////////////////////////
 
 void configMaps(rankEntry *rankMap, entityEntry *clientMap,
-		entityEntry *serverMap, int numProcs, int clientThreadsPerHost,
-		int serverThreadsPerHost);
+		serverEntry *serverMap, int numProcs, int clientThreadsPerHost,
+		int serverThreadsPerHost, int coresForHPThreads);
 
 void initializeEntityMap(entityEntry *entityMap, int numEntities, int numThreads);
 
+void initializeServerMap(serverEntry *serverMap, int numServers, int numLPthreads, int numHPthreads);
+
 void freeEntityMap(entityEntry *entityMap, int numEntities);
+
+void freeServerMap(serverEntry *serverMap, int numServers);
 
 void calcProcInfo(int *procsPerHost, int *numHosts, int numProcs,
 		int clientThreadsPerHost, int serverThreadsPerHost);
@@ -135,6 +147,9 @@ void writeArray(FILE *fp, int *array, int size);
 void writeRankMap(FILE *fp, rankEntry *rankMap, int numRanks);
 
 void writeEntityMap(FILE *fp, entityEntry *entityMap, int numEntities, int numThreads);
+
+void writeServerMap(FILE *fp, serverEntry *serverMap, int numServers, int numHPThreads,
+		int numLPThreads);
 
 FILE *initLog(char *filename, rankEntry *rankMap);
 

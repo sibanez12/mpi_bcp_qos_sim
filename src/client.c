@@ -188,17 +188,17 @@ int chooseServerID(clientThreadState *threadState) {
 
 /*
  * Choose the rank of the server to send to
- * TODO:
+ * TODO: choose a random rank within the correct priority group
  */
 void chooseServerRank(int *targetServerRank, int *targetServerThreadID,
 		int targetServerID, clientThreadState *threadState) {
-	entityEntry targetServer = serverMap[targetServerID];
+	serverEntry targetServer = serverMap[targetServerID];
 
 	unsigned long int *seed = &(threadState->seed);
 
 	int randVal = myRandom(seed);
-	int index = randVal % targetServer.count;
-	*targetServerRank = targetServer.ranks[index];
+	int index = randVal % targetServer.HPcount;
+	*targetServerRank = targetServer.HPranks[index];
 	*targetServerThreadID = 0;
 }
 

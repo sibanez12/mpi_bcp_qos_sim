@@ -103,8 +103,8 @@ int getFirstOne(bitVector *bitVec) {
  *
  */
 void configMaps(rankEntry *rankMap, entityEntry *clientMap,
-		entityEntry *serverMap, int numProcs, int clientThreadsPerHost,
-		int serverThreadsPerHost) {
+		serverEntry *serverMap, int numProcs, int clientThreadsPerHost,
+		int serverThreadsPerHost, int coresForHPThreads) {
 
 	int procsPerHost, numHosts;
 
@@ -131,6 +131,8 @@ void configMaps(rankEntry *rankMap, entityEntry *clientMap,
 		bool isServer = !isClient;
 		rankMap[rank].isServer = isServer;
 		rankMap[rank].serverID = (isServer) ? serverID : INVALID_INDEX ;
+		bool isHPServer = (isServer && hostOffset < clientThreadsPerHost + coresForHPThreads);
+		bool isLPServer = (isServer && !isHPServer);
 
 		// set clientMap
 		if (isClient) {
@@ -140,11 +142,16 @@ void configMaps(rankEntry *rankMap, entityEntry *clientMap,
 			clientMap[clientID].count++;
 		}
 		// set serverMap
-		if (isServer) {
+		if (isHPServer) {
 			serverMap[serverID].hostID = hostID;
-			int index = serverMap[serverID].count;
-			serverMap[serverID].ranks[index] = rank;
-			serverMap[serverID].count++;
+			int HPindex = serverMap[serverID].HPcount;
+			serverMap[serverID].HPranks[HPindex] = rank;
+			serverMap[serverID].HPcount++;
+		} else if (isLPServer) {
+			serverMap[serverID].hostID = hostID;
+			int LPindex = serverMap[serverID].LPcount;
+			serverMap[serverID].LPranks[LPindex] = rank;
+			serverMap[serverID].LPcount++;
 		}
 
 		rank++;
@@ -159,11 +166,28 @@ void initializeEntityMap(entityEntry *entityMap, int numEntities, int numThreads
 	}
 }
 
+void initializeServerMap(serverEntry *serverMap, int numServers, int numLPthreads, int numHPthreads) {
+	for (int i=0; i < numServers; i++) {
+		serverMap[i].LPcount = 0;
+		serverMap[i].HPcount = 0;
+		serverMap[i].LPranks = malloc(sizeof(int)*numLPthreads);
+		serverMap[i].HPranks = malloc(sizeof(int)*numHPthreads);
+	}
+}
+
 void freeEntityMap(entityEntry *entityMap, int numEntities) {
 	for (int i=0; i < numEntities; i++) {
 		free(entityMap[i].ranks);
 	}
 	free(entityMap);
+}
+
+void freeServerMap(serverEntry *serverMap, int numServers) {
+	for (int i=0; i < numServers; i++) {
+		free(serverMap[i].HPranks);
+		free(serverMap[i].LPranks);
+	}
+	free(serverMap);
 }
 
 /*
@@ -335,6 +359,18 @@ void writeEntityMap(FILE *fp, entityEntry *entityMap, int numEntities, int numTh
 		fprintf(fp, "	count	==> %d\n", entityMap[i].count);
 	}
 	fprintf(fp, "----------------------\n");
+}
+
+void writeServerMap(FILE *fp, serverEntry *serverMap, int numServers, int numHPThreads,
+		int numLPThreads) {
+	for (int i=0; i < numServers; i++) {
+		fprintf(fp, "Server ID -- %d:\n", i);
+		fprintf(fp, "	hostID ==> %d\n", serverMap[i].hostID);
+		fprintf(fp, "	HPranks ==> "); writeArray(fp, serverMap[i].HPranks, numHPThreads);
+		fprintf(fp, "	HPcount ==> %d\n", serverMap[i].HPcount);
+		fprintf(fp, "	LPranks ==> "); writeArray(fp, serverMap[i].LPranks, numLPThreads);
+		fprintf(fp, "	LPcount ==> %d\n", serverMap[i].LPcount);
+	}
 }
 
 FILE *initLog(char *filename, rankEntry *rankMap) {
