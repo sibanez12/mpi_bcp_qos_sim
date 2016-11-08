@@ -24,7 +24,7 @@
  * 3. send ACK back to server
  */
 void runServer(int serverThreadsPerHost, int serverProcessingTime,
-		int coresForHPThreads, char *serverType) {
+		int coresForHPThreads) {
 
 	signal(SIGUSR1, server_intHandler);
 
@@ -47,7 +47,6 @@ void runServer(int serverThreadsPerHost, int serverProcessingTime,
 	threadState.serverThreadsPerHost = serverThreadsPerHost;
 	threadState.serverProcTime = serverProcessingTime;
 	threadState.coresForHPThreads = coresForHPThreads;
-	threadState.serverType = serverType;
 	threadState.threadID = threadID;
 	threadState.serverID = serverID;
 	threadState.data = malloc(sizeof(bigArray));

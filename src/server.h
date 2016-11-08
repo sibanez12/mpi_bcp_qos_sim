@@ -14,7 +14,6 @@ typedef struct serverThreadState_s {
 	int serverThreadsPerHost;
 	int serverProcTime;
 	int coresForHPThreads;
-	char *serverType;
 	int threadID;
 	int serverID;
 	bigArray *data;
@@ -25,7 +24,7 @@ typedef struct serverThreadState_s {
 } serverThreadState;
 
 void runServer(int serverThreadsPerHost, int serverProcessingTime,
-		int coresForHPThreads, char *serverType);
+		int coresForHPThreads);
 
 void server_runThread(serverThreadState *threadState);
 

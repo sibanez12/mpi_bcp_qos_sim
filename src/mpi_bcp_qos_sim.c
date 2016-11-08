@@ -30,21 +30,12 @@
 /* Start the simulation */
 void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPerHost,
 		int serverProcessingTime, int clientReqPerHost, int clientReqGrpSize,
-		int coresForHPThreads, char *serverType)
+		int coresForHPThreads)
 {
 	int  my_rank;  /* rank of process */
 	int  numProcs; /* number of processes */
 
-	int req;
-	if (strcmp(serverType, "MPI_THREAD_SINGLE") == 0)
-		req = MPI_THREAD_SINGLE;
-	else if (strcmp(serverType, "MPI_THREAD_FUNNELED") == 0)
-		req = MPI_THREAD_FUNNELED;
-	else if (strcmp(serverType, "MPI_THREAD_MULTIPLE") == 0)
-		req = MPI_THREAD_MULTIPLE;
-	else
-		printf("ERROR: unrecognized serverType\n");
-
+	int req = MPI_THREAD_SINGLE;
 	MPI_Init_thread(&argc, &argv, req, &threadSupport);
 	assert(threadSupport == req);
 
@@ -61,8 +52,7 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 	int procsPerHost, numHosts;
 
 	calcProcInfo(&procsPerHost, &numHosts, numProcs,
-			clientThreadsPerHost, serverThreadsPerHost,
-			serverType);
+			clientThreadsPerHost, serverThreadsPerHost);
 
 
 	rankMap = malloc(sizeof(rankEntry)*numProcs);
@@ -73,13 +63,12 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 	serverMap = malloc(sizeof(entityEntry)*numServers);
 	int clientProcsPerClient = 1; // single threaded client processes
 	initializeEntityMap(clientMap, numClients, clientProcsPerClient);
-	int serverProcsPerServer = (strcmp(serverType, "MPI_THREAD_SINGLE") == 0) ?
-			serverThreadsPerHost : 1;
+	int serverProcsPerServer = 	serverThreadsPerHost;
 	initializeEntityMap(serverMap, numServers, serverProcsPerServer);
 
 	// set the rankMap instanceMap, client/server Maps
 	configMaps(rankMap, clientMap, serverMap, numProcs, clientThreadsPerHost,
-			 serverThreadsPerHost, serverType);
+			 serverThreadsPerHost);
 
 	/* Create high priority / low priority communicators
 	 */
@@ -123,14 +112,14 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 		 * Generates requests and collect statistics
 		 */
 		runClient( clientThreadsPerHost, clientReqPerHost, clientReqGrpSize,
-				numHosts, serverType);
+				numHosts);
 	}
 	else if (rankMap[my_rank].isServer) {
 		/*
 		 * Service requests
 		 */
 		runServer(serverThreadsPerHost, serverProcessingTime,
-				coresForHPThreads, serverType);
+				coresForHPThreads);
 	}
 	else {
 		printf("ERROR: process is not a CLIENT, SERVER...\n");
@@ -149,19 +138,13 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 
 int main (int argc, char **argv)
 {
+	// Default parameter settings
 	char *clientThreadsPerHost_s = "1";
 	char *serverThreadsPerHost_s = "1";
 	char *serverProcessingTime_s = "10";
 	char *clientReqPerHost_s = "1";
 	char *clientReqGrpSize_s = "100";
 	char *coresForHPThreads_s = "2";
-	char *serverType = "MPI_THREAD_SINGLE";
-		/*
-		 * serverType options:
-		 * 		- MPI_THREAD_SINGLE
-		 * 		- MPI_THREAD_FUNNELED
-		 * 		- MPI_THREAD_MULTIPLE
-		 */
 
 	int c;
 
@@ -177,12 +160,11 @@ int main (int argc, char **argv)
 				{"clientReqPerHost",          required_argument,   0, 'r'},
 				{"clientReqGrpSize",          required_argument,   0, 'g'},
 				{"coresForHPThreads",         required_argument,   0, 'h'},
-				{"serverType",                required_argument,   0, 't'},
 				{0, 0, 0, 0}
 		};
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
-		c = getopt_long (argc, argv, "c:s:p:r:g:h:t:",
+		c = getopt_long (argc, argv, "c:s:p:r:g:h:",
 				long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -218,9 +200,6 @@ int main (int argc, char **argv)
 			break;
 		case 'h':
 			coresForHPThreads_s = optarg;
-			break;
-		case 't':
-			serverType = optarg;
 			break;
 
 		case '?':
@@ -262,10 +241,6 @@ int main (int argc, char **argv)
 	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverProcessingTime >= 0 &&
 			clientReqPerHost > 0 && clientReqGrpSize > 0 && coresForHPThreads > 0);
 
-	assert(strcmp(serverType, "MPI_THREAD_SINGLE") == 0 || strcmp(serverType, "MPI_THREAD_FUNNELED") == 0 ||
-			strcmp(serverType, "MPI_THREAD_MULTIPLE") == 0);
-	DEBUG_PRINT(("Using serverType ==> %s\n", serverType));
-
 	DEBUG_PRINT(("clientThreadsPerHost = %d, "
 			"serverThreadsPerHost = %d, "
 			"serverProcessingTime = %d, "
@@ -282,7 +257,7 @@ int main (int argc, char **argv)
 	}
 
 	runSim(argc, argv, clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime, clientReqPerHost,
-			clientReqGrpSize, coresForHPThreads, serverType);
+			clientReqGrpSize, coresForHPThreads);
 
 	pthread_exit(NULL);
 }

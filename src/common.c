@@ -104,13 +104,12 @@ int getFirstOne(bitVector *bitVec) {
  */
 void configMaps(rankEntry *rankMap, entityEntry *clientMap,
 		entityEntry *serverMap, int numProcs, int clientThreadsPerHost,
-		int serverThreadsPerHost, char *serverType) {
+		int serverThreadsPerHost) {
 
 	int procsPerHost, numHosts;
 
 	calcProcInfo(&procsPerHost, &numHosts, numProcs,
-			clientThreadsPerHost, serverThreadsPerHost,
-			serverType);
+			clientThreadsPerHost, serverThreadsPerHost);
 
 	int rank = 0;
 	int hostID = 0;
@@ -174,17 +173,9 @@ void freeEntityMap(entityEntry *entityMap, int numEntities) {
  *     # number of hosts
  */
 void calcProcInfo(int *procsPerHost, int *numHosts, int numProcs,
-		int clientThreadsPerHost, int serverThreadsPerHost,
-		char *serverType) {
+		int clientThreadsPerHost, int serverThreadsPerHost) {
 
-	if (strcmp(serverType, "MPI_THREAD_SINGLE") == 0)
-		*procsPerHost = clientThreadsPerHost + serverThreadsPerHost;
-	else if (strcmp(serverType, "MPI_THREAD_FUNNELED") == 0 ||
-			 strcmp(serverType, "MPI_THREAD_MULTIPLE") == 0)
-		*procsPerHost = clientThreadsPerHost + 1; // assuming just one server process per host...
-	else
-		printf("ERROR: unrecognized serverType\n");
-
+	*procsPerHost = clientThreadsPerHost + serverThreadsPerHost;
 	*numHosts = numProcs/(*procsPerHost);
 }
 

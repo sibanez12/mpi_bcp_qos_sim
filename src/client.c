@@ -25,7 +25,7 @@
  *  2. Waits to ACK back from server
  */
 void runClient(int clientThreadsPerHost, int clientReqPerHost, int clientReqGrpSize,
-		int numHosts, char *serverType) {
+		int numHosts) {
 
 	signal(SIGUSR1, client_intHandler);
 
@@ -64,7 +64,6 @@ void runClient(int clientThreadsPerHost, int clientReqPerHost, int clientReqGrpS
 	char filename[100];
 	sprintf(filename, "./out/Client-%d.log", clientID); // different log for each client process
 	threadState.clientLog = initLog(filename, rankMap);
-	threadState.serverType = serverType;
 	threadState.finishedLogging = False;
 
 	client_runThread(&threadState);
@@ -195,9 +194,6 @@ void chooseServerRank(int *targetServerRank, int *targetServerThreadID,
 		int targetServerID, clientThreadState *threadState) {
 	entityEntry targetServer = serverMap[targetServerID];
 
-	/* TODO: Make the client pick the appropriate server rank / threadID
-	 * based on the serverType
-	 */
 	unsigned long int *seed = &(threadState->seed);
 
 	int randVal = myRandom(seed);

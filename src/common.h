@@ -8,7 +8,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 # define DEBUG_PRINT(x) printf x
@@ -93,15 +93,14 @@ int getFirstOne(bitVector *bitVec);
 
 void configMaps(rankEntry *rankMap, entityEntry *clientMap,
 		entityEntry *serverMap, int numProcs, int clientThreadsPerHost,
-		int serverThreadsPerHost, char *serverType);
+		int serverThreadsPerHost);
 
 void initializeEntityMap(entityEntry *entityMap, int numEntities, int numThreads);
 
 void freeEntityMap(entityEntry *entityMap, int numEntities);
 
 void calcProcInfo(int *procsPerHost, int *numHosts, int numProcs,
-		int clientThreadsPerHost, int serverThreadsPerHost,
-		char *serverType);
+		int clientThreadsPerHost, int serverThreadsPerHost);
 
 /* Should change this to be able to handle arbitrary levels of QoS */
 void createHPComm(MPI_Comm *highPriority_comm);

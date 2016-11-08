@@ -49,12 +49,11 @@ typedef struct clientThreadState_s {
 	int numClientSessions;
 	unsigned long int seed;
 	FILE *clientLog;
-	char *serverType;
 	bool finishedLogging;
 } clientThreadState;
 
 void runClient( int clientThreadsPerHost, int clientReqPerHost, int clientReqGrpSize,
-		int numHosts, char *serverType);
+		int numHosts);
 
 void client_runThread(clientThreadState *threadState);
 
