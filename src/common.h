@@ -28,6 +28,10 @@ typedef int bool;
 #define INT_SIZE_BITS (sizeof(unsigned int)*8)
 #define INVALID_INDEX -1
 
+#define NSEC_PER_SEC 1000000000
+
+#define NUM_WARMUP_SAMPLES 50
+
 typedef struct bitVector_s {
 	unsigned int *vector;
 	int len; // in bits
@@ -39,10 +43,9 @@ typedef struct bigArray_s {
 	char array[BIG_ARRAY_SIZE];
 } bigArray;
 
-#define MSG_NITEMS 3
+#define MSG_NITEMS 2
 typedef struct mpiMsg_s {
 	char message[BUFSIZE];
-	int cont_index; // index so that the client knows what state to update when the ACK arrives
 	int threadID;
 } mpiMsg;
 
@@ -121,7 +124,7 @@ void createLPComm(MPI_Comm *lowPriority_comm);
 
 void create_mpi_message_type(MPI_Datatype *mpi_message_type);
 
-void create_message(mpiMsg *buf, char *message, int cont_index, int threadID);
+void create_message(mpiMsg *buf, char *message, int threadID);
 
 void perform_task(bigArray *data, int procTime, unsigned long int *seed);
 
@@ -135,6 +138,12 @@ int max_array(int a[], int num_elements);
 int hashFunc(int i);
 
 unsigned long int myRandom(unsigned long int *seed);
+
+int timespec_subtract (struct timespec *result, struct timespec *x, struct timespec *y);
+
+void compute_ipg(int rate_packets_per_sec, struct timespec *ipg_t);
+
+long double timespec_to_double(struct timespec *time);
 
 /////////////////////////////////////////
 ///// Functions Used for Debugging //////

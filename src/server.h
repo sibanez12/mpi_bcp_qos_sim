@@ -21,10 +21,13 @@ typedef struct serverThreadState_s {
 	bool logFile_isOpen;
 	unsigned long long numREQmsgs;
 	unsigned long int seed;
+	bool isHighPriority;
 } serverThreadState;
 
 void runServer(int serverThreadsPerHost, int serverProcessingTime,
 		int coresForHPThreads);
+
+bool server_getPriority(serverThreadState *threadState);
 
 void server_runThread(serverThreadState *threadState);
 

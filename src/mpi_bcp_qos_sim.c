@@ -29,8 +29,8 @@
 
 /* Start the simulation */
 void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPerHost,
-		int serverProcessingTime, int clientReqPerHost, int clientReqGrpSize,
-		int coresForHPThreads)
+		int serverProcessingTime, int clientHPReqRate, int clientLPReqRate,
+		int clientReqGrpSize, int coresForHPThreads)
 {
 	int  my_rank;  /* rank of process */
 	int  numProcs; /* number of processes */
@@ -84,7 +84,6 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 	gethostname(hostname, sizeof(hostname));
 	if (strcmp(hostname, "ubuntu") != 0) {
 		assert(clientThreadsPerHost + serverThreadsPerHost <= limit);
-		assert(coresForHPThreads < serverThreadsPerHost);
 	}
 
 //	// Used to stall so we can attach to gdb
@@ -112,8 +111,8 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 		/*
 		 * Generates requests and collect statistics
 		 */
-		runClient( clientThreadsPerHost, clientReqPerHost, clientReqGrpSize,
-				numHosts);
+		runClient( clientThreadsPerHost, clientHPReqRate, clientLPReqRate,
+				clientReqGrpSize, numHosts);
 	}
 	else if (rankMap[my_rank].isServer) {
 		/*
@@ -143,9 +142,11 @@ int main (int argc, char **argv)
 	char *clientThreadsPerHost_s = "1";
 	char *serverThreadsPerHost_s = "3";
 	char *serverProcessingTime_s = "10";
-	char *clientReqPerHost_s = "1";
+	char *clientHPReqRate_s = "1"; // number of HP messages outstanding at a time
+	char *clientLPReqRate_s = "10"; // requests/second
 	char *clientReqGrpSize_s = "100";
 	char *coresForHPThreads_s = "2";
+
 
 	int c;
 
@@ -158,14 +159,15 @@ int main (int argc, char **argv)
 				{"clientThreadsPerHost",      required_argument,   0, 'c'},
 				{"serverThreadsPerHost",      required_argument,   0, 's'},
 				{"serverProcessingTime",      required_argument,   0, 'p'},
-				{"clientReqPerHost",          required_argument,   0, 'r'},
+				{"clientHPReqRate",           required_argument,   0, 'r'},
+				{"clientLPReqRate",           required_argument,   0, 'l'},
 				{"clientReqGrpSize",          required_argument,   0, 'g'},
 				{"coresForHPThreads",         required_argument,   0, 'h'},
 				{0, 0, 0, 0}
 		};
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
-		c = getopt_long (argc, argv, "c:s:p:r:g:h:",
+		c = getopt_long (argc, argv, "c:s:p:r:l:g:h:",
 				long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -194,7 +196,10 @@ int main (int argc, char **argv)
 			serverProcessingTime_s = optarg;
 			break;
 		case 'r':
-			clientReqPerHost_s = optarg;
+			clientHPReqRate_s = optarg;
+			break;
+		case 'l':
+			clientLPReqRate_s = optarg;
 			break;
 		case 'g':
 			clientReqGrpSize_s = optarg;
@@ -226,7 +231,8 @@ int main (int argc, char **argv)
 	int clientThreadsPerHost;
 	int serverThreadsPerHost;
 	int serverProcessingTime;
-	int clientReqPerHost;
+	int clientHPReqRate;
+	int clientLPReqRate;
 	int clientReqGrpSize;
 	int coresForHPThreads;
 
@@ -235,21 +241,24 @@ int main (int argc, char **argv)
 	clientThreadsPerHost = strtol(clientThreadsPerHost_s, &ptr, base);
 	serverThreadsPerHost = strtol(serverThreadsPerHost_s, &ptr, base);
 	serverProcessingTime = strtol(serverProcessingTime_s, &ptr, base);
-	clientReqPerHost = strtol(clientReqPerHost_s, &ptr, base);
+	clientHPReqRate = strtol(clientHPReqRate_s, &ptr, base);
+	clientLPReqRate = strtol(clientLPReqRate_s, &ptr, base);
 	clientReqGrpSize = strtol(clientReqGrpSize_s, &ptr, base);
 	coresForHPThreads = strtol(coresForHPThreads_s, &ptr, base);
 
 	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverProcessingTime >= 0 &&
-			clientReqPerHost > 0 && clientReqGrpSize > 0 && coresForHPThreads >= 0);
+			clientHPReqRate > 0 && clientLPReqRate > 0 && clientReqGrpSize > 0 && coresForHPThreads >= 0);
+	assert(coresForHPThreads < serverThreadsPerHost);
 
 	DEBUG_PRINT(("clientThreadsPerHost = %d, "
 			"serverThreadsPerHost = %d, "
 			"serverProcessingTime = %d, "
-			"clientReqPerHost = %d, "
+			"clientHPReqRate = %d, "
+			"clientLPReqRate = %d, "
 			"clientReqGrpSize = %d, "
 			"coresForHPThreads = %d\n",
-			clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime, clientReqPerHost,
-			clientReqGrpSize, coresForHPThreads));
+			clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime, clientHPReqRate,
+			clientLPReqRate, clientReqGrpSize, coresForHPThreads));
 
 	/* Make sure the output directory exists */
 	struct stat st = {0};
@@ -257,8 +266,8 @@ int main (int argc, char **argv)
 		mkdir("./out", 0700);
 	}
 
-	runSim(argc, argv, clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime, clientReqPerHost,
-			clientReqGrpSize, coresForHPThreads);
+	runSim(argc, argv, clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime, clientHPReqRate,
+			clientLPReqRate, clientReqGrpSize, coresForHPThreads);
 
 	pthread_exit(NULL);
 }

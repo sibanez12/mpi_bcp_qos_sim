@@ -214,13 +214,12 @@ void createLPComm(MPI_Comm *lowPriority_comm) {
 void create_mpi_message_type(MPI_Datatype *mpi_message_type) {
 	/* create a type for struct car */
 	int nitems = MSG_NITEMS;
-	int          blocklengths[MSG_NITEMS] = {BUFSIZE, 1, 1};
-	MPI_Datatype types[MSG_NITEMS] = {MPI_CHAR, MPI_INT, MPI_INT};
+	int          blocklengths[MSG_NITEMS] = {BUFSIZE, 1};
+	MPI_Datatype types[MSG_NITEMS] = {MPI_CHAR, MPI_INT};
 	MPI_Aint     offsets[MSG_NITEMS];
 
 	offsets[0] = offsetof(mpiMsg, message);
-	offsets[1] = offsetof(mpiMsg, cont_index);
-	offsets[2] = offsetof(mpiMsg, threadID);
+	offsets[1] = offsetof(mpiMsg, threadID);
 
 	MPI_Type_create_struct(nitems, blocklengths, offsets, types, mpi_message_type);
 	MPI_Type_commit(mpi_message_type);
@@ -229,14 +228,13 @@ void create_mpi_message_type(MPI_Datatype *mpi_message_type) {
 /*
  * Create a message
  */
-void create_message(mpiMsg *buf, char *message, int cont_index, int threadID) {
+void create_message(mpiMsg *buf, char *message, int threadID) {
 	if (strlen(message) < BUFSIZE)
 		strncpy(buf->message, message, BUFSIZE);
 	else {
 		printf("message is too long, must be less than %d bytes", BUFSIZE);
 		exit(-1);
 	}
-	buf->cont_index = cont_index;
 	buf->threadID = threadID;
 }
 
@@ -305,6 +303,49 @@ unsigned long int myRandom( unsigned long int *seed) {
 	return (*seed);
 }
 
+/* Subtract the ‘struct timespec’ values X and Y,
+   storing the result in RESULT.
+   Return 1 if the difference is negative, otherwise 0. */
+int timespec_subtract (struct timespec *result, struct timespec *x, struct timespec *y) {
+  /* Perform the carry for the later subtraction by updating y. */
+  if (x->tv_nsec < y->tv_nsec) {
+    int nsec = (y->tv_nsec - x->tv_nsec) / NSEC_PER_SEC + 1;
+    y->tv_nsec -= NSEC_PER_SEC * nsec;
+    y->tv_sec += nsec;
+  }
+  if (x->tv_nsec - y->tv_nsec > NSEC_PER_SEC) {
+    int nsec = (x->tv_nsec - y->tv_nsec) / NSEC_PER_SEC;
+    y->tv_nsec += NSEC_PER_SEC * nsec;
+    y->tv_sec -= nsec;
+  }
+
+  /* Compute the time remaining to wait.
+     tv_nsec is certainly positive. */
+  result->tv_sec = x->tv_sec - y->tv_sec;
+  result->tv_nsec = x->tv_nsec - y->tv_nsec;
+
+  /* Return 1 if result is negative. */
+  return x->tv_sec < y->tv_sec;
+}
+
+/*
+ * Compute the inter packetgap based on the rate
+ */
+void compute_ipg(int rate_packets_per_sec, struct timespec *ipg_t) {
+	double ipg_d = 1.0/((double) rate_packets_per_sec);
+
+	// convert to nano seconds and cast to integer value
+	ipg_d *= NSEC_PER_SEC;
+	unsigned long ipg_nsec = (unsigned long) ipg_d;
+
+	ipg_t->tv_sec = ipg_nsec / NSEC_PER_SEC;
+	ipg_t->tv_nsec = ipg_nsec % NSEC_PER_SEC;
+
+}
+
+long double timespec_to_double(struct timespec *time) {
+	return ((long double) time->tv_sec) + ((long double) time->tv_nsec/NSEC_PER_SEC);
+}
 
 /////////////////////////////////////////
 ///// Functions Used for Debugging //////

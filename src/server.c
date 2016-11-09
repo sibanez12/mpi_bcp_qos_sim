@@ -57,6 +57,7 @@ void runServer(int serverThreadsPerHost, int serverProcessingTime,
 	threadState.logFile_isOpen = True;
 	threadState.numREQmsgs = 0;
 	threadState.seed = 1202107158 * my_rank + threadID * 1999; // seed RNG once for each thread
+	threadState.isHighPriority = server_getPriority(&threadState);
 
 	/* TODO: Bind threads to cores */
 
@@ -65,15 +66,26 @@ void runServer(int serverThreadsPerHost, int serverProcessingTime,
 	server_cleanup(&threadState);
 }
 
+/*
+ * Returns true if this is a high priority server thread
+ */
+bool server_getPriority(serverThreadState *threadState) {
+	int threadID = threadState->threadID;
+	int coresForHPThreads = threadState->coresForHPThreads;
+	return (threadID < coresForHPThreads);
+
+}
+
 void server_runThread(serverThreadState *threadState) {
 	int threadID = threadState->threadID;
 	int serverID = threadState->serverID;
 	int serverProcTime = threadState->serverProcTime;
 	unsigned long int *seed = &(threadState->seed);
 	bigArray *data = threadState->data;
+	bool isHighPriority = threadState->isHighPriority;
 
 	/* TODO: only used HP comm for now */
-	MPI_Comm comm = highPriority_comm;
+	MPI_Comm comm = (isHighPriority) ? highPriority_comm : lowPriority_comm;
 
 	MPI_Status status;
 	mpiMsg msgBuf;
@@ -85,12 +97,12 @@ void server_runThread(serverThreadState *threadState) {
 		DEBUG_PRINT(("SERVER %d - thread %d - received message: %s\n",
 				serverID, threadID, msgBuf.message));
 
-		if (strcmp(msgBuf.message, "REQUEST") == 0) {
+		if (strcmp(msgBuf.message, "HIGH PRIORITY REQUEST") == 0) {
 			threadState->numREQmsgs++;
 			perform_task(data, serverProcTime, seed);
 
 			/* send ACK back */
-			create_message(&msgBuf, "ACK", msgBuf.cont_index, msgBuf.threadID);
+			create_message(&msgBuf, "HIGH PRIORITY ACK", msgBuf.threadID);
 			server_sendWrapper(&msgBuf, 1, mpi_message_type, status.MPI_SOURCE, status.MPI_TAG, comm);
 			DEBUG_PRINT(("SERVER %d - thread %d, sent ACK message\n", serverID, threadID));
 		}
