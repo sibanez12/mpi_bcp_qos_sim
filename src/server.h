@@ -19,7 +19,8 @@ typedef struct serverThreadState_s {
 	bigArray *data;
 	FILE *logFile;
 	bool logFile_isOpen;
-	unsigned long long numREQmsgs;
+	unsigned long long numHPReqMsgs;
+	unsigned long long numLPReqMsgs;
 	unsigned long int seed;
 	bool isHighPriority;
 } serverThreadState;

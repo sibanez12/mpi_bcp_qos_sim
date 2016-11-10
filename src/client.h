@@ -57,6 +57,7 @@ typedef struct clientThreadState_s {
 	struct timespec init_start_time;
 	struct timespec final_time;
 	int targetServerID;
+	unsigned long long warmupCount;
 } clientThreadState;
 
 void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRate,
@@ -70,7 +71,7 @@ void client_checkSendRecvHPReq(clientThreadState *threadState);
 
 void client_waitHPReply(clientThreadState *threadState);
 
-void client_UpdateStats(clientThreadState *threadState);
+void client_updateStats(clientThreadState *threadState);
 
 bool client_shouldSend(int rate, struct timespec *lastPKtSendTime);
 

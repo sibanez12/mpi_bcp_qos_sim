@@ -67,13 +67,16 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	threadState.lastLPReqTime = curr_time;
 	// set the initial time to compare against for high priority messages
 	threadState.lastHPReqTime = curr_time;
-	client_runThread(&threadState);
 	threadState.avgHPReqCTsum = 0;
 	threadState.numHPReqSamples = 0;
 	threadState.targetServerID = chooseServerID(&threadState);
 	threadState.init_start_time = curr_time;
 	threadState.final_time.tv_sec = 0;
 	threadState.final_time.tv_nsec = 0;
+	threadState.warmupCount = 0;
+
+	// run the client thread
+	client_runThread(&threadState);
 
 	/* Send out message to all processes indicating that the simulation has completed. */
 	mpiMsg msgBuf;
@@ -140,7 +143,6 @@ void client_checkSendRecvHPReq(clientThreadState *threadState) {
  */
 void client_waitHPReply(clientThreadState *threadState) {
 	int clientID = threadState->clientID;
-	long double numHPReqSamples = threadState->numHPReqSamples;
 
 	MPI_Status status;
 	mpiMsg msgBuf;
@@ -152,19 +154,20 @@ void client_waitHPReply(clientThreadState *threadState) {
 	int targetServerID = rankMap[status.MPI_SOURCE].serverID;
 	assert(targetServerID == expectedServerID); // make sure message came from the expected rank
 	if (strcmp(msgBuf.message, "HIGH PRIORITY ACK") == 0) {
-		bool past_warmup = (numHPReqSamples > NUM_WARMUP_SAMPLES);
-		if (past_warmup)
-			client_UpdateStats(threadState);
+		threadState->warmupCount++;
+		bool past_warmup = (threadState->warmupCount > NUM_WARMUP_SAMPLES);
+		if (past_warmup) {
+			client_updateStats(threadState);
+		}
 	} else {
 		printf("ERROR: CLIENT %d received unknown message %s\n", clientID, msgBuf.message);
 	}
-
 }
 
 /*
  * TODO: Update the stats on arrival of the HP message response
  */
-void client_UpdateStats(clientThreadState *threadState) {
+void client_updateStats(clientThreadState *threadState) {
 	struct timespec curr_time;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &curr_time);
 
@@ -221,7 +224,7 @@ void client_sendReq(MPI_Comm comm, clientThreadState *threadState) {
 	 * Using non-blocking send*/
 	MPI_Send(&msgBuf, 1, mpi_message_type, targetServerRank, tag, comm);
 
-	DEBUG_PRINT(("CLIENT %d -- thread %d -- sent REQUEST message\n", threadState->clientID, threadState->threadID));
+	DEBUG_PRINT(("CLIENT %d -- thread %d -- sent %s message\n", threadState->clientID, threadState->threadID, msgBuf.message));
 
 }
 

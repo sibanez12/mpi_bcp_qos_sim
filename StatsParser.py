@@ -10,12 +10,11 @@ class StatsParser:
     and accumulates the statistics for the simulation.
     """
 
-    def __init__(self, directory, clientReqPerHost, clientThreadsPerHost):
+    def __init__(self, directory, clientThreadsPerHost):
         self.rootdir = directory
         self.logFiles = []
         self.clientStats = {}
         self.serverStats = {}
-        self.clientReqPerHost = clientReqPerHost
         self.clientThreadsPerHost = clientThreadsPerHost
 
         self.CLIENT = 0
@@ -28,12 +27,11 @@ class StatsParser:
         ######### CLIENT log format ###########
         #######################################
         self.client_stats_log_format = r"""####################################
-CLIENT (?P<rank>[0-9]*) -- Channel (?P<channel>[0-9]*)
+CLIENT (?P<rank>[0-9]*)
 Final Statistics
 -----------------------------
-Average Completion Time = (?P<avgCT>[-\d\.infa]*)
-Variance of Completion Times = (?P<varCT>[-\d\.infa]*)
-Number of Samples = (?P<numSamples>[-\d\.]*)
+Average High Priority Request Completion Time = (?P<avgCT>[-\d\.infa]*)
+Number of High Priority Request Samples = (?P<numSamples>[-\d\.]*)
 -----------------------------
 Total Time = (?P<totalTime>[-\d\.]*)
 Total Num Requests = (?P<totalNumReqs>[-\d\.]*)
@@ -41,7 +39,7 @@ Requests/sec = (?P<reqsPerSec>[-\d\.infa]*)
 #####################################"""
 
         self.client_config_log_format = r"""@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-CLIENT (?P<rank>[0-9]*) -- Channel (?P<channel>[0-9]*)
+CLIENT (?P<rank>[0-9]*)
 Target Server = (?P<targetServer>[0-9]*)
 Target Server Info:
 --------------------
@@ -55,7 +53,8 @@ Host ID = (?P<targetHostID>[0-9]*)
         self.server_stats_log_format = r"""###########################
 SERVER (?P<rank>[0-9]*) - THREAD ID: (?P<threadID>[0-9]*)
 --------------------------
-Num REQUEST msgs = (?P<numREQmsgs>[\d\.]*)
+Num High Priority REQUEST msgs = (?P<numHPReqMsgs>[\d\.]*)
+Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
 ###########################"""
 
         self.parse_results()
@@ -87,14 +86,7 @@ Num REQUEST msgs = (?P<numREQmsgs>[\d\.]*)
                 self.process_stats(searchObj.groupdict(), logType)
                 log = log[:searchObj.start()] + log[searchObj.end():]
                 searchObj = re.search(log_format, log)
-            if numHits > 0:
-                expectedHits = self.clientReqPerHost/self.clientThreadsPerHost
-                if (re.search(r"Client", filename) is not None and (numHits < expectedHits) ):
-                    print >>sys.stderr, "WARNING: encountered incomplete logfile:"
-                    print "# Client stats in log ", filename
-                    print "\tActual = ", numHits
-                    print "\tMin Expected = ", expectedHits
-            else:
+            if numHits == 0:
                 print >> sys.stderr, "WARNING: encountered empty log file: ", filename
 
     """

@@ -8,7 +8,7 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
 # define DEBUG_PRINT(x) printf x

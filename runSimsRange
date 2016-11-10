@@ -15,14 +15,14 @@ def main():
         help="The number of server threads to run on each host")
     parser.add_argument("--serverProcessingTime", type=str, default="1",
         help="The number of work units for the server threads to perform after receiving a message")
-    parser.add_argument("--clientReqPerHost", type=str, default="1",
-        help="The number of outstanding client requests on each node")
+    parser.add_argument("--clientHPReqRate", type=str, default="1",
+        help="The maximum rate of the high priority messages. Note: The actual rate will depend on the HP request latency")
+    parser.add_argument("--clientLPReqRate", type=str, default="1",
+        help="The maximum rate of the low priority messages. Note: The actual rate will depend on the HP request latency")
     parser.add_argument("--clientReqGrpSize", type=str, default="100",
         help="The size of the request group for which a measurement will be taken")
     parser.add_argument("--coresForHPThreads", type=str, default="1",
         help="The number of cores to reserve for processing high priority messages on each host")
-    parser.add_argument("--serverType", type=str, default="MPI_THREAD_SINGLE",
-        help="The type of server we want to use. Options: MPI_THREAD_SINGLE, MPI_THREAD_FUNNELED, MPI_THREAD_MULTIPLE")
 
     try:
         args = parser.parse_args()
@@ -33,12 +33,10 @@ def main():
     argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost, 
                'serverThreadsPerHost': args.serverThreadsPerHost, 
                'serverProcessingTime': args.serverProcessingTime, 
-               'clientReqPerHost': args.clientReqPerHost, 
+               'clientHPReqRate': args.clientHPReqRate, 
+               'clientLPReqRate': args.clientLPReqRate, 
                'clientReqGrpSize': args.clientReqGrpSize, 
-               'coresForHPThreads': args.coresForHPThreads, 
-               'serverType': args.serverType}
-
-
+               'coresForHPThreads': args.coresForHPThreads}
     run_sims_range(args, argsMap)
     
 

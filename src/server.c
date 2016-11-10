@@ -55,7 +55,8 @@ void runServer(int serverThreadsPerHost, int serverProcessingTime,
 	sprintf(filename, "./out/Server-%d__Thread-%d.log", serverID, threadID);
 	threadState.logFile = initLog(filename, rankMap);
 	threadState.logFile_isOpen = True;
-	threadState.numREQmsgs = 0;
+	threadState.numHPReqMsgs = 0;
+	threadState.numLPReqMsgs = 0;
 	threadState.seed = 1202107158 * my_rank + threadID * 1999; // seed RNG once for each thread
 	threadState.isHighPriority = server_getPriority(&threadState);
 
@@ -98,13 +99,17 @@ void server_runThread(serverThreadState *threadState) {
 				serverID, threadID, msgBuf.message));
 
 		if (strcmp(msgBuf.message, "HIGH PRIORITY REQUEST") == 0) {
-			threadState->numREQmsgs++;
+			threadState->numHPReqMsgs++;
 			perform_task(data, serverProcTime, seed);
 
 			/* send ACK back */
 			create_message(&msgBuf, "HIGH PRIORITY ACK", msgBuf.threadID);
 			server_sendWrapper(&msgBuf, 1, mpi_message_type, status.MPI_SOURCE, status.MPI_TAG, comm);
-			DEBUG_PRINT(("SERVER %d - thread %d, sent ACK message\n", serverID, threadID));
+			DEBUG_PRINT(("SERVER %d - thread %d, sent %s message\n", serverID, threadID, msgBuf.message));
+		} else if (strcmp(msgBuf.message, "LOW PRIORITY REQUEST") == 0) {
+			threadState->numLPReqMsgs++;
+			perform_task(data, serverProcTime, seed);
+			/* Don't send back reply for low priority requests */
 		}
 		else if (strcmp(msgBuf.message, "SIM COMPLETE") == 0) {
 			if (server_writeLog == True) {
@@ -165,9 +170,10 @@ void writeServerLog(serverThreadState *threadState) {
 				"###########################\n"
 				"SERVER %d - THREAD ID: %d\n"
 				"--------------------------\n"
-				"Num REQUEST msgs = %llu\n"
+				"Num High Priority REQUEST msgs = %llu\n"
+				"Num Low Priority REQUEST msgs = %llu\n"
 				"###########################\n",
-				serverID, threadID, threadState->numREQmsgs);
+				serverID, threadID, threadState->numHPReqMsgs, threadState->numLPReqMsgs);
 		fclose(threadState->logFile);
 		threadState->logFile_isOpen = False;
 		printf("SERVER %d -- THREAD %d ==> DONE reporting Stats\n", serverID, threadID);

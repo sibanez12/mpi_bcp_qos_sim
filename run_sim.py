@@ -7,7 +7,7 @@ from time import sleep
 from StatsParser import StatsParser
 from StatsAnalysis import *
 
-SIM_RUN_TIME = 10
+SIM_RUN_TIME = 30
 OUTPUT_DIR = "./out/"
 BUILD = "./Debug"
 SIM_LOGGING_TIME = 5
@@ -27,13 +27,7 @@ def kill_sim(process):
 
 def run_sim(args, numHosts=None):
 
-    assert(args['serverType'] in ['MPI_THREAD_SINGLE', 'MPI_THREAD_FUNNELED', 'MPI_THREAD_MULTIPLE'])
-
-    if (args['serverType'] == 'MPI_THREAD_SINGLE'):
-        procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
-    else:
-        # assuming just one server per host
-        procsPerHost = args['clientThreadsPerHost'] + 1
+    procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
 
     if (socket.gethostname() == 'ubuntu'):
         
@@ -52,24 +46,23 @@ def run_sim(args, numHosts=None):
                 '--clientThreadsPerHost', str(args['clientThreadsPerHost']), 
                 '--serverThreadsPerHost', str(args['serverThreadsPerHost']),
                 '--serverProcessingTime', str(args['serverProcessingTime']),
-                '--clientReqPerHost', str(args['clientReqPerHost']),
+                '--clientHPReqRate', str(args['clientHPReqRate']),
+                '--clientLPReqRate', str(args['clientLPReqRate']),
                 '--clientReqGrpSize', str(args['clientReqGrpSize']),
-                '--coresForHPThreads', str(args['coresForHPThreads']),
-                '--serverType', args['serverType']]
+                '--coresForHPThreads', str(args['coresForHPThreads'])]
         print "command: \n", ' '.join(simArgs)
     else:
-
-        # Running on infiniband cluster
+        # Running on actual cluster
         MPI_RUN_CMD = makeMPI_runCmd(procsPerHost)
         simArgs = MPI_RUN_CMD + \
                 [BUILD+'/mpi_bcp_qos_sim',
                 '--clientThreadsPerHost', str(args['clientThreadsPerHost']), 
                 '--serverThreadsPerHost', str(args['serverThreadsPerHost']),
                 '--serverProcessingTime', str(args['serverProcessingTime']),
-                '--clientReqPerHost', str(args['clientReqPerHost']),
+                '--clientHPReqRate', str(args['clientHPReqRate']),
+                '--clientLPReqRate', str(args['clientLPReqRate']),
                 '--clientReqGrpSize', str(args['clientReqGrpSize']),
-                '--coresForHPThreads', str(args['coresForHPThreads']),
-                '--serverType', args['serverType']]
+                '--coresForHPThreads', str(args['coresForHPThreads'])]
         print "command: \n", ' '.join(simArgs)
 
     # Delete current contents of the output directory 
@@ -88,7 +81,7 @@ def run_sim(args, numHosts=None):
     p.wait()
     print "Process finished with returncode: ", p.returncode
 
-    stats = StatsParser(OUTPUT_DIR, args['clientReqPerHost'], args['clientThreadsPerHost'])
+    stats = StatsParser(OUTPUT_DIR, args['clientThreadsPerHost'])
     return stats
 
 
@@ -145,8 +138,6 @@ This function returns an int if val can be converted to an int
 or a list of values if val is written in the format start:inc:end
 """
 def parse_option(option, val):
-    if (option == "serverType"):
-        return val
     try:
         result = int(val)
     except:
