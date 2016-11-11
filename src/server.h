@@ -25,8 +25,8 @@ typedef struct serverThreadState_s {
 	bool isHighPriority;
 } serverThreadState;
 
-void runServer(int serverThreadsPerHost, int serverProcessingTime,
-		int coresForHPThreads);
+void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNetLoad,
+		int coresForHPThreads, int numHosts);
 
 bool server_getPriority(serverThreadState *threadState);
 

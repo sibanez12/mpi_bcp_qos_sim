@@ -23,8 +23,8 @@
  * 2. Do required processing
  * 3. send ACK back to server
  */
-void runServer(int serverThreadsPerHost, int serverProcessingTime,
-		int coresForHPThreads) {
+void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNetLoad,
+		int coresForHPThreads, int numHosts) {
 
 	signal(SIGUSR1, server_intHandler);
 
