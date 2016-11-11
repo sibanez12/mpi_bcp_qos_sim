@@ -46,7 +46,9 @@ void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNet
 	serverThreadState threadState;
 	threadState.serverThreadsPerHost = serverThreadsPerHost;
 	threadState.serverProcTime = serverProcessingTime;
+	threadState.serverNetLoad = serverNetLoad;
 	threadState.coresForHPThreads = coresForHPThreads;
+	threadState.numHosts = numHosts;
 	threadState.threadID = threadID;
 	threadState.serverID = serverID;
 	threadState.data = malloc(sizeof(bigArray));

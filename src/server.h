@@ -10,10 +10,18 @@
 
 bool volatile server_writeLog;
 
+typedef struct serverContinuation_s {
+	int replyCount;
+	int numRepliesNeeded;
+	int originClientRank;
+} serverContinuation;
+
 typedef struct serverThreadState_s {
 	int serverThreadsPerHost;
 	int serverProcTime;
+	int serverNetLoad;
 	int coresForHPThreads;
+	int numHosts;
 	int threadID;
 	int serverID;
 	bigArray *data;
@@ -23,6 +31,9 @@ typedef struct serverThreadState_s {
 	unsigned long long numLPReqMsgs;
 	unsigned long int seed;
 	bool isHighPriority;
+	serverContinuation *continuations;
+	int maxContinuations;
+	bitVector *continuationVector;
 } serverThreadState;
 
 void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNetLoad,
