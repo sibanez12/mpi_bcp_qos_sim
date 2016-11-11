@@ -164,6 +164,77 @@ void server_receiveWrapper(mpiMsg *msgBuf, int count, int source,
 
 }
 
+/*
+ *  Create, send and receive the response of a request to a different server.
+ */
+void serverCreateNetworkRequest(serverThreadState *threadState, MPI_Comm comm, int tag) {
+	mpiMsg s2sMsgBuf;
+	int targetServerRank;
+	char *msg = "HIGH PRIORITY SERVER REQUEST";
+
+
+	bool isHighPriority = (comm == highPriority_comm);
+	if (!isHighPriority) {
+		msg = "LOW PRIORITY SERVER REQUEST";
+	}
+
+	for (int i = 0; i < threadState->serverNetLoad; i++) {
+		/* Each request can go to a different server */
+		int targetServerID = serverChooseServerID(threadState);
+		serverChooseServerRank(&targetServerRank, targetServerID, threadState, isHighPriority);
+
+		/* Send the message but do not wait for ACK */
+		create_message(&s2sMsgBuf, msg, 0);
+		server_sendWrapper(&s2sMsgBuf, 1, mpi_message_type, targetServerRank, tag, comm);
+		DEBUG_PRINT(("SERVER %d - thread %d - SENT REQUEST TO SERVER %d RANK %d\n",
+						threadState->serverID, threadState->threadID, targetServerID, targetServerRank));
+	}
+}
+
+/* Choose the server to send to:
+ *    - pick random serverIDs until we find a server that is not on the same host as the current server
+ *    - return the serverID of the chosen server
+ */
+int serverChooseServerID(serverThreadState *threadState) {
+	int numServers = threadState->numHosts;
+	unsigned long int *seed = &(threadState->seed);
+
+	int my_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+	int my_host = rankMap[my_rank].hostID;
+	long int randVal = myRandom(seed);
+	int serverID = randVal % numServers;
+
+	/* Make sure the chosen server is on a different host */
+	while (serverMap[serverID].hostID == my_host) {
+		randVal = myRandom(seed);
+		serverID = randVal % numServers;
+	}
+
+	return serverID;
+}
+
+/*
+ * Choose the rank of the server to send to
+ */
+void serverChooseServerRank(int *targetServerRank, int targetServerID,
+		serverThreadState *threadState, bool isHighPriority) {
+	serverEntry targetServer = serverMap[targetServerID];
+
+	DEBUG_PRINT(("ChooseServerRank from server %d\n", targetServerID));
+
+	unsigned long int *seed = &(threadState->seed);
+	int randVal = myRandom(seed);
+
+	if (isHighPriority) {
+		int index = randVal % targetServer.HPcount;
+		*targetServerRank = targetServer.HPranks[index];
+	} else {
+		int index = randVal % targetServer.LPcount;
+		*targetServerRank = targetServer.LPranks[index];
+	}
+}
+
 void writeServerLog(serverThreadState *threadState) {
 	if (threadState->logFile_isOpen == True) {
 		int threadID = threadState->threadID;

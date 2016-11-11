@@ -50,6 +50,13 @@ void server_cleanup(serverThreadState *threadState);
 
 void server_intHandler(int sig_num);
 
+int serverChooseServerID(serverThreadState *threadState);
+
+void serverChooseServerRank(int *targetServerRank, int targetServerID,
+		serverThreadState *threadState, bool isHighPriority);
+
+void serverCreateNetworkRequest(serverThreadState *threadState, MPI_Comm comm, int tag);
+
 void server_receiveWrapper(mpiMsg *msgBuf, int count, int source,
 		int tag, MPI_Comm comm, MPI_Status *status, serverThreadState *threadState);
 
