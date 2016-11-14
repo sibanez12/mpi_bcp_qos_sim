@@ -240,7 +240,7 @@ void server_receiveWrapper(mpiMsg *msgBuf, int count, int source,
 	MPI_Request req;
 	MPI_Irecv(msgBuf, count, mpi_message_type, source, tag, comm, &req);
 	/* Spin in user space waiting for the message to arrive */
-	int flag = False;
+	int flag = False; // used to be a bool, but MPI_Test wants an int ptr
 	while (flag == False) {
 		MPI_Test(&req, &flag, status);
 		if (server_writeLog == True) {

@@ -79,11 +79,11 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	// Initialise the histogram
 	hdr_init(
 	    1,  // Minimum value
-	    INT64_C(3600000),  // Maximum value
-	    3,  // Number of significant figures
+	    INT64_C(2000000000),  // Maximum value
+	    2,  // Number of significant figures
 	    &(threadState.histogram) // Pointer to initialise
 	);
-	DEBUG_HIST_PRINT(("Initializing Histogram for client %d (%p) at %p\n", clientID, (void*)&threadState, (void*) &(threadState.histogram)));
+	DEBUG_PRINT(("Initializing Histogram for client %d (%p) at %p\n", clientID, (void*)&threadState, (void*) &(threadState.histogram)));
 
 	// run the client thread
 	client_runThread(&threadState);
@@ -188,6 +188,12 @@ void client_updateStats(clientThreadState *threadState) {
 	threadState->numHPReqSamples += 1;
 
 	long double latency_d = timespec_to_double(&latency);
+//	DEBUG_HIST_PRINT(("Latency: %Lf\n", latency_d*1000000000));
+	hdr_record_value(
+			threadState->histogram,
+			(int64_t)(latency_d*1000000000)
+	);
+
 	threadState->avgHPReqCTsum += latency_d;
 
 }
@@ -317,15 +323,6 @@ void client_intHandler(int sig_num) {
  */
 void client_reportFinalStats(clientThreadState *threadState) {
 	if (threadState->finishedLogging == False) {
-		DEBUG_HIST_PRINT(("Adding value for client %d (%p) at %p\n", threadState->clientID, (void*)threadState, (void*)threadState->histogram));
-
-		for (int i = 1; i <= 100; i++) {
-//			DEBUG_HIST_PRINT(("Adding value for client %d\n", threadState->clientID));
-			hdr_record_value(threadState->histogram, i);
-		}
-
-
-
 
 		FILE *clientLog = threadState->clientLog;
 		int threadID = threadState->threadID;
@@ -336,10 +333,13 @@ void client_reportFinalStats(clientThreadState *threadState) {
 		hdr_percentiles_print(
 			threadState->histogram,
 		    clientLog,  // File to write to
-		    5,  // Granularity of printed values
-		    1.0,  // Multiplier for results
-		    CLASSIC // Format CLASSIC/CSV supported.
+		    10,  		// Granularity of printed values
+		    1.0,  		// Multiplier for results
+		    CSV 		// Format CLASSIC/CSV supported.
 		);
+
+		fprintf(clientLog, "99 Value: %ld\n", hdr_value_at_percentile(threadState->histogram, 99));
+		fprintf(clientLog, "15 Value: %ld\n", hdr_value_at_percentile(threadState->histogram, 15));
 
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
@@ -401,7 +401,7 @@ void client_ReceiveOne_spin(mpiMsg *msgBuf, int count, MPI_Datatype type, int so
 	MPI_Request req;
 	MPI_Irecv(msgBuf, count, type, source, tag, comm, &req);
 	/* Spin in user space waiting for the ACK to arrive */
-	int flag = false;
+	int flag = false; // used to be a bool, but MPI test wants an int.
 	while (flag == false) {
 		MPI_Test(&req,&flag,status);
 	}
