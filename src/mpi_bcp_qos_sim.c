@@ -58,7 +58,7 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 	rankMap = malloc(sizeof(rankEntry)*numProcs);
 
 	int numClients = numHosts*clientThreadsPerHost;
-	int numServers = numHosts; // assuming one server per host
+	int numServers = numHosts;
 	clientMap = malloc(sizeof(entityEntry)*numClients);
 	serverMap = malloc(sizeof(serverEntry)*numServers);
 	int clientProcsPerClient = 1; // single threaded client processes
@@ -111,15 +111,15 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 		/*
 		 * Generates requests and collect statistics
 		 */
-		runClient( clientThreadsPerHost, clientHPReqRate, clientLPReqRate,
+		runClient(clientThreadsPerHost, clientHPReqRate, clientLPReqRate,
 				clientReqGrpSize, numHosts);
 	}
 	else if (rankMap[my_rank].isServer) {
 		/*
 		 * Service requests
 		 */
-		runServer(serverThreadsPerHost, serverProcessingTime, serverNetLoad,
-				coresForHPThreads, numHosts);
+		runServer(serverThreadsPerHost, clientThreadsPerHost, serverProcessingTime,
+				serverNetLoad, coresForHPThreads, numHosts);
 	}
 	else {
 		printf("ERROR: process is not a CLIENT, SERVER...\n");
@@ -254,7 +254,7 @@ int main (int argc, char **argv)
 	coresForHPThreads = strtol(coresForHPThreads_s, &ptr, base);
 
 	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverProcessingTime >= 0 &&
-			serverNetLoad && clientHPReqRate > 0 && clientLPReqRate > 0 && clientReqGrpSize > 0 &&
+			serverNetLoad >= 0 && clientHPReqRate > 0 && clientLPReqRate > 0 && clientReqGrpSize > 0 &&
 			coresForHPThreads >= 0);
 	assert(coresForHPThreads < serverThreadsPerHost);
 
@@ -276,7 +276,7 @@ int main (int argc, char **argv)
 	}
 
 	runSim(argc, argv, clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime,
-			clientHPReqRate, serverNetLoad, clientLPReqRate, clientReqGrpSize, coresForHPThreads);
+			serverNetLoad, clientHPReqRate, clientLPReqRate, clientReqGrpSize, coresForHPThreads);
 
 	pthread_exit(NULL);
 }

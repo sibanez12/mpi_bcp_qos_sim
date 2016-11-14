@@ -23,15 +23,16 @@
  * 2. Do required processing
  * 3. send ACK back to server
  */
-void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNetLoad,
+void runServer(int serverThreadsPerHost, int clientThreadsPerHost, int serverProcessingTime, int serverNetLoad,
 		int coresForHPThreads, int numHosts) {
 
 	signal(SIGUSR1, server_intHandler);
 
 	int my_rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-	int threadID = my_rank % serverThreadsPerHost;
+	int threadID = my_rank % (serverThreadsPerHost + clientThreadsPerHost) - clientThreadsPerHost;
 	int serverID = rankMap[my_rank].serverID;
+
 
 //	// Used to stall so we can attach to gdb
 //	int i = 0;
@@ -61,8 +62,14 @@ void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNet
 	threadState.numLPReqMsgs = 0;
 	threadState.seed = 1202107158 * my_rank + threadID * 1999; // seed RNG once for each thread
 	threadState.isHighPriority = server_getPriority(&threadState);
+	/* FIXME Calculate dynamically the continuation size */
+	threadState.continuations = malloc(5000 * sizeof(serverContinuation));
+	threadState.maxContinuations = 5000;
+	threadState.continuationVector = createBitVector(5000);
 
 	/* TODO: Bind threads to cores */
+	DEBUG_PRINT(("SERVER %d - thread %d - rank %d - isHighPriority %d --> Initializing\n",
+						serverID, threadID, my_rank, threadState.isHighPriority));
 
 	server_runThread(&threadState);
 
@@ -87,33 +94,112 @@ void server_runThread(serverThreadState *threadState) {
 	bigArray *data = threadState->data;
 	bool isHighPriority = threadState->isHighPriority;
 
-	/* TODO: only used HP comm for now */
 	MPI_Comm comm = (isHighPriority) ? highPriority_comm : lowPriority_comm;
 
 	MPI_Status status;
 	mpiMsg msgBuf;
 	server_writeLog = False;
 	while(1) {
-		/* receive REQUEST message from client node and send back ACK */
 		server_receiveWrapper(&msgBuf, 1, MPI_ANY_SOURCE, MPI_ANY_TAG,
 				comm, &status, threadState);
 		DEBUG_PRINT(("SERVER %d - thread %d - received message: %s\n",
 				serverID, threadID, msgBuf.message));
 
+		/* Receive HP request from a client */
 		if (strcmp(msgBuf.message, "HIGH PRIORITY REQUEST") == 0) {
 			threadState->numHPReqMsgs++;
+
+			/* Do some local processing */
 			perform_task(data, serverProcTime, seed);
 
-			/* send ACK back */
-			create_message(&msgBuf, "HIGH PRIORITY ACK", msgBuf.threadID);
-			server_sendWrapper(&msgBuf, 1, mpi_message_type, status.MPI_SOURCE, status.MPI_TAG, comm);
-			DEBUG_PRINT(("SERVER %d - thread %d, sent %s message\n", serverID, threadID, msgBuf.message));
+			/* Check whether server-2-server request is required */
+			if (threadState->serverNetLoad == 0) {
+				/* If not, just send an ACK */
+				create_message(&msgBuf, "HIGH PRIORITY ACK", 0);
+				server_sendWrapper(&msgBuf, 1, mpi_message_type, status.MPI_SOURCE, 0, comm);
+				DEBUG_PRINT(("SERVER %d - thread %d, sent %s message\n", serverID, threadID, msgBuf.message));
+			} else {
+				/* Create server-2-server network load */
+				int tag = getFirstOne(threadState->continuationVector);
+				/* FIXME: Handle the case where the bitVector is full */
+				serverCreateNetworkRequest(threadState, comm, tag);
+				clearBit(threadState->continuationVector, tag);
+				/* Initialize the continuation for this request */
+				threadState->continuations[tag].replyCount = 0;
+				threadState->continuations[tag].numRepliesNeeded = threadState->serverNetLoad;
+				threadState->continuations[tag].originClientRank = status.MPI_SOURCE;
+			}
+			/* Can't send ACK back yet*/
+		/* Receive LP request from a client */
 		} else if (strcmp(msgBuf.message, "LOW PRIORITY REQUEST") == 0) {
 			threadState->numLPReqMsgs++;
+
+			/* Do some local processing */
 			perform_task(data, serverProcTime, seed);
-			/* Don't send back reply for low priority requests */
-		}
-		else if (strcmp(msgBuf.message, "SIM COMPLETE") == 0) {
+
+			/* Create server-2-server network load if required */
+			if (threadState->serverNetLoad != 0) {
+				int tag = getFirstOne(threadState->continuationVector);
+				/* FIXME: Handle the case where the continuation vector is full */
+				serverCreateNetworkRequest(threadState, comm, tag);
+				clearBit(threadState->continuationVector, tag);
+				/* Initialize the continuation for this request */
+				threadState->continuations[tag].replyCount = 0;
+				threadState->continuations[tag].numRepliesNeeded = threadState->serverNetLoad;
+				threadState->continuations[tag].originClientRank = status.MPI_SOURCE;
+			}
+
+		/* Receive HP request from a server */
+		} else if (strcmp(msgBuf.message, "HIGH PRIORITY SERVER REQUEST") == 0) {
+			/* FIXME: Do we need to update statistics here? */
+
+			/* Do only local processing */
+			perform_task(data, serverProcTime, seed);
+
+			/* Send ACK back */
+			create_message(&msgBuf, "HIGH PRIORITY ACK", msgBuf.threadID);
+			server_sendWrapper(&msgBuf, 1, mpi_message_type, status.MPI_SOURCE, status.MPI_TAG, comm);
+		/* Receive LP request from a server */
+		} else if (strcmp(msgBuf.message, "LOW PRIORITY SERVER REQUEST") == 0) {
+			/* FIXME: Do we need to update statistics here? */
+
+			/* Do only local processing */
+			perform_task(data, serverProcTime, seed);
+
+			/* Send ACK back */
+			create_message(&msgBuf, "LOW PRIORITY ACK", msgBuf.threadID);
+			server_sendWrapper(&msgBuf, 1, mpi_message_type, status.MPI_SOURCE, status.MPI_TAG, comm);
+		/* Receive HP ACK from a server */
+		} else if (strcmp(msgBuf.message, "HIGH PRIORITY ACK") == 0){
+			/* Identify the continuation to which this ACK belongs */
+			serverContinuation *current_continuation = &threadState->continuations[status.MPI_TAG];
+
+			/* Check whether this is the final message needed for this continuation */
+			current_continuation->replyCount++;
+			if (current_continuation->replyCount == current_continuation->numRepliesNeeded) {
+				/* Send ACK message to the client */
+				create_message(&msgBuf, "HIGH PRIORITY ACK", 0);
+				server_sendWrapper(&msgBuf, 1, mpi_message_type, current_continuation->originClientRank,
+							0, comm);
+				DEBUG_PRINT(("SERVER %d - thread %d, sent %s message\n", serverID, threadID, msgBuf.message));
+
+				/* Set the bitVector entry of this continuation to be free */
+				setBit(threadState->continuationVector, status.MPI_TAG);
+			}
+		/* Receive LP ACK from a server */
+		} else if (strcmp(msgBuf.message, "LOW PRIORITY ACK") == 0){
+					/* Identify the continuation to which this ACK belongs */
+					serverContinuation *current_continuation = &threadState->continuations[status.MPI_TAG];
+
+					/* Check whether this is the final message needed for this continuation */
+					current_continuation->replyCount++;
+					if (current_continuation->replyCount == current_continuation->numRepliesNeeded) {
+						/* Don't send back reply for LP requests */
+
+						/* Set the bitVector entry of this continuation to be free */
+						setBit(threadState->continuationVector, status.MPI_TAG);
+					}
+		} else if (strcmp(msgBuf.message, "SIM COMPLETE") == 0) {
 			if (server_writeLog == True) {
 				writeServerLog(threadState);
 			}

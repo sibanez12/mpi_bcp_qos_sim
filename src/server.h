@@ -36,8 +36,8 @@ typedef struct serverThreadState_s {
 	bitVector *continuationVector;
 } serverThreadState;
 
-void runServer(int serverThreadsPerHost, int serverProcessingTime, int serverNetLoad,
-		int coresForHPThreads, int numHosts);
+void runServer(int serverThreadsPerHost, int clientThreadsPerHost,
+		int serverProcessingTime, int serverNetLoad, int coresForHPThreads, int numHosts);
 
 bool server_getPriority(serverThreadState *threadState);
 
