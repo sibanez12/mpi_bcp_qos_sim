@@ -22,6 +22,7 @@
 #include "common.h"
 #include "client.h"
 
+
 /*  1. Client sends requests to server
  *  2. Waits to ACK back from server
  */
@@ -74,6 +75,15 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	threadState.final_time.tv_sec = 0;
 	threadState.final_time.tv_nsec = 0;
 	threadState.warmupCount = 0;
+
+	// Initialise the histogram
+	hdr_init(
+	    1,  // Minimum value
+	    INT64_C(3600000),  // Maximum value
+	    3,  // Number of significant figures
+	    &(threadState.histogram) // Pointer to initialise
+	);
+	DEBUG_HIST_PRINT(("Initializing Histogram for client %d (%p) at %p\n", clientID, (void*)&threadState, (void*) &(threadState.histogram)));
 
 	// run the client thread
 	client_runThread(&threadState);
@@ -197,7 +207,7 @@ bool client_shouldSend(int rate, struct timespec *lastPKtSendTime) {
 
 	struct timespec curr_minus_ipg;
 	int r = timespec_subtract (&curr_minus_ipg, &curr_time, &ipg);
-	if (r == 1) printf("ERROR: current_time - ipg < 0\n");
+	//if (r == 1) printf("ERROR: current_time - ipg < 0\n");
 
 	struct timespec temp;
 	bool shouldSendReq = timespec_subtract(&temp, lastPKtSendTime, &curr_minus_ipg);
@@ -307,10 +317,29 @@ void client_intHandler(int sig_num) {
  */
 void client_reportFinalStats(clientThreadState *threadState) {
 	if (threadState->finishedLogging == False) {
+		DEBUG_HIST_PRINT(("Adding value for client %d (%p) at %p\n", threadState->clientID, (void*)threadState, (void*)threadState->histogram));
+
+		for (int i = 1; i <= 100; i++) {
+//			DEBUG_HIST_PRINT(("Adding value for client %d\n", threadState->clientID));
+			hdr_record_value(threadState->histogram, i);
+		}
+
+
+
+
 		FILE *clientLog = threadState->clientLog;
 		int threadID = threadState->threadID;
 		int clientReqGrpSize = threadState->clientReqGrpSize;
 		int clientID = threadState->clientID;
+
+		// Print out the values of the histogram
+		hdr_percentiles_print(
+			threadState->histogram,
+		    clientLog,  // File to write to
+		    5,  // Granularity of printed values
+		    1.0,  // Multiplier for results
+		    CLASSIC // Format CLASSIC/CSV supported.
+		);
 
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
@@ -372,8 +401,8 @@ void client_ReceiveOne_spin(mpiMsg *msgBuf, int count, MPI_Datatype type, int so
 	MPI_Request req;
 	MPI_Irecv(msgBuf, count, type, source, tag, comm, &req);
 	/* Spin in user space waiting for the ACK to arrive */
-	bool flag = False;
-	while (flag == False) {
+	int flag = false;
+	while (flag == false) {
 		MPI_Test(&req,&flag,status);
 	}
 }

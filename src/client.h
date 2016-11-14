@@ -14,6 +14,7 @@
 
 #include <time.h>
 #include "common.h"
+#include "hdr_histogram.h"
 
 /* global variable that is modified by signal handler to
  * dump statistics / end the simulation */
@@ -49,6 +50,7 @@ typedef struct clientThreadState_s {
 	int numHosts;
 	unsigned long int seed;
 	FILE *clientLog;
+	struct hdr_histogram* histogram;
 	bool finishedLogging;
 	struct timespec lastLPReqTime;
 	struct timespec lastHPReqTime;
