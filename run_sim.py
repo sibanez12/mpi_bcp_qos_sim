@@ -30,7 +30,7 @@ def run_sim(args, numHosts=None):
     procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
 
     if (socket.gethostname() == 'ubuntu'):
-        
+
         try:
             assert(numHosts is not None)
         except:
