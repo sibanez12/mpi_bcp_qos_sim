@@ -129,7 +129,7 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 	freeEntityMap(clientMap, numClients);
 	freeServerMap(serverMap, numServers);
 	/* Will kill the simulation with a signal */
-	while(True){
+	while(true){
 		sleep(5);
 	}
 	MPI_Finalize();
@@ -280,4 +280,3 @@ int main (int argc, char **argv)
 
 	pthread_exit(NULL);
 }
-

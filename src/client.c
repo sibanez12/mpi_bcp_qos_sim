@@ -64,7 +64,7 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	// char histfile[100];
 	// sprintf(histfile, "./out/Client-%d.hist", clientID); // different Hist Data for each client process
 	// threadState.clientHistData = initHistData(histfile, rankMap);
-	threadState.finishedLogging = False;
+	threadState.finishedLogging = false;
 	struct timespec curr_time;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(curr_time));
 	// set the initial time to compare against for low priority messages
@@ -100,7 +100,7 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
 
 	for (int dest = 0; dest < p; dest++) {
-		if (rankMap[dest].isServer == True) {
+		if (rankMap[dest].isServer == true) {
 			MPI_Send(&msgBuf, 1, mpi_message_type, dest, tag, highPriority_comm);
 		}
 	}
@@ -112,8 +112,8 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
  */
 void client_runThread(clientThreadState *threadState) {
 
-	client_keepRunning = True;
-	while(client_keepRunning == True) {
+	client_keepRunning = true;
+	while(client_keepRunning == true) {
 		client_checkSendLPReq(threadState);
 		client_checkSendRecvHPReq(threadState);
 	}
@@ -319,14 +319,14 @@ void client_intHandler(int sig_num) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	int clientID = rankMap[my_rank].clientID;
 	printf("************* CLIENT %d -- caught signal %d *****************\n", clientID, sig_num);
-	client_keepRunning = False;
+	client_keepRunning = false;
 }
 
 /*
  * Report the final statistics of the simulation
  */
 void client_reportFinalStats(clientThreadState *threadState) {
-	if (threadState->finishedLogging == False) {
+	if (threadState->finishedLogging == false) {
 
 		// FILE *histData = threadState->clientHistData;
 		FILE *clientLog = threadState->clientLog;
@@ -386,7 +386,7 @@ void client_reportFinalStats(clientThreadState *threadState) {
 		fclose(clientLog);
 		// fclose(histData);
 		printf("CLIENT %d -- THREAD %d ==> DONE reporting Stats\n", clientID, threadID);
-		threadState->finishedLogging = True;
+		threadState->finishedLogging = true;
 	}
 }
 

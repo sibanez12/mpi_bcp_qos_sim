@@ -15,14 +15,13 @@
 #include <inttypes.h>
 
 #include "hdr_histogram.h"
-#include "hdr_tests.h"
 
-//  ######   #######  ##     ## ##    ## ########  ######  
-// ##    ## ##     ## ##     ## ###   ##    ##    ##    ## 
-// ##       ##     ## ##     ## ####  ##    ##    ##       
-// ##       ##     ## ##     ## ## ## ##    ##     ######  
-// ##       ##     ## ##     ## ##  ####    ##          ## 
-// ##    ## ##     ## ##     ## ##   ###    ##    ##    ## 
+//  ######   #######  ##     ## ##    ## ########  ######
+// ##    ## ##     ## ##     ## ###   ##    ##    ##    ##
+// ##       ##     ## ##     ## ####  ##    ##    ##
+// ##       ##     ## ##     ## ## ## ##    ##     ######
+// ##       ##     ## ##     ## ##  ####    ##          ##
+// ##    ## ##     ## ##     ## ##   ###    ##    ##    ##
 //  ######   #######   #######  ##    ##    ##     ######
 
 static int32_t normalize_index(const struct hdr_histogram* h, int32_t index)
@@ -42,7 +41,7 @@ static int32_t normalize_index(const struct hdr_histogram* h, int32_t index)
     else if (normalized_index >= h->counts_len)
     {
         adjustment = -h->counts_len;
-    } 
+    }
 
     return normalized_index + adjustment;
 }
@@ -455,7 +454,7 @@ int64_t hdr_add_while_correcting_for_coordinated_omission(
     struct hdr_iter iter;
     hdr_iter_recorded_init(&iter, from);
     int64_t dropped = 0;
-    
+
     while (hdr_iter_next(&iter))
     {
         int64_t value = iter.value;
@@ -466,7 +465,7 @@ int64_t hdr_add_while_correcting_for_coordinated_omission(
             dropped += count;
         }
     }
-    
+
     return dropped;
 }
 
