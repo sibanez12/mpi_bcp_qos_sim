@@ -8,6 +8,9 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
+// NOTE: Moved to using stdbool.h, which defines bool, and true=1, false=0.
+#include <stdbool.h>
+
 //#define DEBUG
 
 #ifdef DEBUG
@@ -20,10 +23,6 @@
 #define BIG_ARRAY_SIZE 20*8388608
 #define BYTES_TO_READ 512
 #define BYTES_TO_WRITE 512
-
-typedef int bool;
-#define True 1
-#define False 0
 
 #define INT_SIZE_BITS (sizeof(unsigned int)*8)
 #define INVALID_INDEX -1
@@ -161,6 +160,8 @@ void writeServerMap(FILE *fp, serverEntry *serverMap, int numServers, int numHPT
 		int numLPThreads);
 
 FILE *initLog(char *filename, rankEntry *rankMap);
+
+FILE *initHistData(char *filename, rankEntry *rankMap);
 
 void printThreadSupport();
 

@@ -343,6 +343,9 @@ void compute_ipg(int rate_packets_per_sec, struct timespec *ipg_t) {
 
 }
 
+/**
+ * Return the time in nanosecords.
+ */
 long double timespec_to_double(struct timespec *time) {
 	return ((long double) time->tv_sec) + ((long double) time->tv_nsec/NSEC_PER_SEC);
 }
@@ -438,6 +441,18 @@ FILE *initLog(char *filename, rankEntry *rankMap) {
 	return fp;
 }
 
+FILE *initHistData(char *filename, rankEntry *rankMap) {
+	int my_rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+	FILE *fp = fopen(filename, "w");
+	fclose(fp);
+	fp = fopen(filename, "a");
+	return fp;
+}
+
+
+
 void printThreadSupport() {
 	if (threadSupport == MPI_THREAD_SINGLE)
 		printf("threadSupport = MPI_THREAD_SINGLE\n");
@@ -450,4 +465,3 @@ void printThreadSupport() {
 	else
 		printf("ERROR: Unknown threadSupport provided\n");
 }
-

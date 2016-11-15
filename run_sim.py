@@ -2,7 +2,7 @@
 import sys, subprocess, socket, os
 import shutil, re, shlex, getpass
 import signal
-from threading import Thread 
+from threading import Thread
 from time import sleep
 from StatsParser import StatsParser
 from StatsAnalysis import *
@@ -30,7 +30,7 @@ def run_sim(args, numHosts=None):
     procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
 
     if (socket.gethostname() == 'ubuntu'):
-        
+
         try:
             assert(numHosts is not None)
         except:
@@ -42,8 +42,8 @@ def run_sim(args, numHosts=None):
         MPI_RUN_CMD = ['mpiexec', '-n', str(totalProcs), '-env', 'MV2_SMP_USE_CMA=0', \
         '-env', 'MV2_ENABLE_AFFINITY=0'] if (MPI_IMPL == 'MVAPICH2') else ['mpirun', '-np', str(totalProcs)]
         simArgs = MPI_RUN_CMD + \
-                [BUILD+'/mpi_bcp_qos_sim', 
-                '--clientThreadsPerHost', str(args['clientThreadsPerHost']), 
+                [BUILD+'/mpi_bcp_qos_sim',
+                '--clientThreadsPerHost', str(args['clientThreadsPerHost']),
                 '--serverThreadsPerHost', str(args['serverThreadsPerHost']),
                 '--serverProcessingTime', str(args['serverProcessingTime']),
                 '--serverNetLoad', str(args['serverNetLoad']),
@@ -57,7 +57,7 @@ def run_sim(args, numHosts=None):
         MPI_RUN_CMD = makeMPI_runCmd(procsPerHost)
         simArgs = MPI_RUN_CMD + \
                 [BUILD+'/mpi_bcp_qos_sim',
-                '--clientThreadsPerHost', str(args['clientThreadsPerHost']), 
+                '--clientThreadsPerHost', str(args['clientThreadsPerHost']),
                 '--serverThreadsPerHost', str(args['serverThreadsPerHost']),
                 '--serverProcessingTime', str(args['serverProcessingTime']),
                 '--serverNetLoad', str(args['serverNetLoad']),
@@ -67,7 +67,7 @@ def run_sim(args, numHosts=None):
                 '--coresForHPThreads', str(args['coresForHPThreads'])]
         print "command: \n", ' '.join(simArgs)
 
-    # Delete current contents of the output directory 
+    # Delete current contents of the output directory
     try:
         shutil.rmtree(OUTPUT_DIR)
     except:
@@ -83,7 +83,7 @@ def run_sim(args, numHosts=None):
     p.wait()
     print "Process finished with returncode: ", p.returncode
 
-    stats = StatsParser(OUTPUT_DIR, args['clientThreadsPerHost'])
+    stats = StatsParser(OUTPUT_DIR)
     return stats
 
 
@@ -174,6 +174,27 @@ def printExperimentSummaries(finalStats, printUtilization):
         stats.printExpSummary(printUtilization)
         i += 1
 
+<<<<<<< HEAD
+def gethostnames():
+    with open('hostnames') as f:
+        hostnames = f.readlines()
+
+    hosts = []
+    for h in hostnames:
+        hosts.append(h[:-1])
+    return hosts
+
+"""
+Make the hostfile used to start the MPI job
+"""
+def makeHostFile(procsPerHost):
+    hosts = gethostnames()
+
+    with open('hosts', 'w') as f:
+        for host in hosts:
+            f.write(host + ':' + str(procsPerHost) + '\n')
+=======
+>>>>>>> 26572617d57b0709ecc2ce474a01cc60cabedb12
 
 def makeMPI_runCmd(procsPerHost):
     OMPI_RUN_CMD = ['mpirun', '-npernode', str(procsPerHost), '--hostfile', 'hostfile.ompi', '--bind-to', 'core', '--report-bindings']

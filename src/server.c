@@ -57,7 +57,7 @@ void runServer(int serverThreadsPerHost, int clientThreadsPerHost, int serverPro
 	char filename[100];
 	sprintf(filename, "./out/Server-%d__Thread-%d.log", serverID, threadID);
 	threadState.logFile = initLog(filename, rankMap);
-	threadState.logFile_isOpen = True;
+	threadState.logFile_isOpen = true;
 	threadState.numHPReqMsgs = 0;
 	threadState.numLPReqMsgs = 0;
 	threadState.seed = 1202107158 * my_rank + threadID * 1999; // seed RNG once for each thread
@@ -98,7 +98,7 @@ void server_runThread(serverThreadState *threadState) {
 
 	MPI_Status status;
 	mpiMsg msgBuf;
-	server_writeLog = False;
+	server_writeLog = false;
 	while(1) {
 		server_receiveWrapper(&msgBuf, 1, MPI_ANY_SOURCE, MPI_ANY_TAG,
 				comm, &status, threadState);
@@ -200,7 +200,7 @@ void server_runThread(serverThreadState *threadState) {
 						setBit(threadState->continuationVector, status.MPI_TAG);
 					}
 		} else if (strcmp(msgBuf.message, "SIM COMPLETE") == 0) {
-			if (server_writeLog == True) {
+			if (server_writeLog == true) {
 				writeServerLog(threadState);
 			}
 		} else {
@@ -228,7 +228,7 @@ void server_intHandler(int sig_num) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	int serverID = rankMap[my_rank].serverID;
 	printf("************* SERVER %d caught signal %d *****************\n", serverID, sig_num);
-	server_writeLog = True;
+	server_writeLog = true;
 }
 
 /*
@@ -240,10 +240,10 @@ void server_receiveWrapper(mpiMsg *msgBuf, int count, int source,
 	MPI_Request req;
 	MPI_Irecv(msgBuf, count, mpi_message_type, source, tag, comm, &req);
 	/* Spin in user space waiting for the message to arrive */
-	bool flag = False;
-	while (flag == False) {
+	int flag = false; // used to be a bool, but MPI_Test wants an int ptr
+	while (flag == false) {
 		MPI_Test(&req, &flag, status);
-		if (server_writeLog == True) {
+		if (server_writeLog == true) {
 			writeServerLog(threadState);
 		}
 	}
@@ -322,7 +322,7 @@ void serverChooseServerRank(int *targetServerRank, int targetServerID,
 }
 
 void writeServerLog(serverThreadState *threadState) {
-	if (threadState->logFile_isOpen == True) {
+	if (threadState->logFile_isOpen == true) {
 		int threadID = threadState->threadID;
 		int serverID = threadState->serverID;
 		fprintf(threadState->logFile,
@@ -334,7 +334,7 @@ void writeServerLog(serverThreadState *threadState) {
 				"###########################\n",
 				serverID, threadID, threadState->numHPReqMsgs, threadState->numLPReqMsgs);
 		fclose(threadState->logFile);
-		threadState->logFile_isOpen = False;
+		threadState->logFile_isOpen = false;
 		printf("SERVER %d -- THREAD %d ==> DONE reporting Stats\n", serverID, threadID);
 	}
 }

@@ -1,8 +1,8 @@
 /*
  * client.c
  *
- *  Created on: Oct 20, 2016
- *      Author: sibanez
+ *	Created on: Oct 20, 2016
+ *			Author: sibanez
  */
 
 #define _GNU_SOURCE
@@ -22,8 +22,9 @@
 #include "common.h"
 #include "client.h"
 
-/*  1. Client sends requests to server
- *  2. Waits to ACK back from server
+
+/*	1. Client sends requests to server
+ *	2. Waits to ACK back from server
  */
 void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRate,
 		int clientReqGrpSize, int numHosts) {
@@ -60,7 +61,10 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	char filename[100];
 	sprintf(filename, "./out/Client-%d.log", clientID); // different log for each client process
 	threadState.clientLog = initLog(filename, rankMap);
-	threadState.finishedLogging = False;
+	// char histfile[100];
+	// sprintf(histfile, "./out/Client-%d.hist", clientID); // different Hist Data for each client process
+	// threadState.clientHistData = initHistData(histfile, rankMap);
+	threadState.finishedLogging = false;
 	struct timespec curr_time;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(curr_time));
 	// set the initial time to compare against for low priority messages
@@ -75,6 +79,15 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	threadState.final_time.tv_nsec = 0;
 	threadState.warmupCount = 0;
 
+	// Initialise the histogram
+	hdr_init(
+			1,										// Minimum value = 1 ns
+			INT64_C(10 * NSEC_PER_SEC),	// Maximum value = 10 s
+			2,										// Number of significant figures after decimal
+			&(threadState.histogram) // Pointer to initialise
+	);
+	DEBUG_PRINT(("Initializing Histogram for client %d (%p) at %p\n", clientID, (void*)&threadState, (void*) &(threadState.histogram)));
+
 	// run the client thread
 	client_runThread(&threadState);
 
@@ -87,7 +100,7 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
 
 	for (int dest = 0; dest < p; dest++) {
-		if (rankMap[dest].isServer == True) {
+		if (rankMap[dest].isServer == true) {
 			MPI_Send(&msgBuf, 1, mpi_message_type, dest, tag, highPriority_comm);
 		}
 	}
@@ -99,8 +112,8 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
  */
 void client_runThread(clientThreadState *threadState) {
 
-	client_keepRunning = True;
-	while(client_keepRunning == True) {
+	client_keepRunning = true;
+	while(client_keepRunning == true) {
 		client_checkSendLPReq(threadState);
 		client_checkSendRecvHPReq(threadState);
 	}
@@ -178,13 +191,20 @@ void client_updateStats(clientThreadState *threadState) {
 	threadState->numHPReqSamples += 1;
 
 	long double latency_d = timespec_to_double(&latency);
+	// Log the latency value into the histogram in nanoseconds since HdrHistogram
+	// takes integers as input.
+	hdr_record_value(
+			threadState->histogram,
+			(int64_t)(latency_d*NSEC_PER_SEC)
+	);
+
 	threadState->avgHPReqCTsum += latency_d;
 
 }
 
 /*
  * if: lastTime - (curr_time - ipg) < 0
- *     send new packet
+ *		 send new packet
  */
 bool client_shouldSend(int rate, struct timespec *lastPKtSendTime) {
 
@@ -230,8 +250,8 @@ void client_sendReq(MPI_Comm comm, clientThreadState *threadState) {
 
 
 /* Choose the server to send to:
- *    - pick random serverIDs until we find a server that is not on the same host
- *    - returns the serverID of the chosen server
+ *		- pick random serverIDs until we find a server that is not on the same host
+ *		- returns the serverID of the chosen server
  */
 int chooseServerID(clientThreadState *threadState) {
 	int numHosts = threadState->numHosts;
@@ -299,18 +319,30 @@ void client_intHandler(int sig_num) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	int clientID = rankMap[my_rank].clientID;
 	printf("************* CLIENT %d -- caught signal %d *****************\n", clientID, sig_num);
-	client_keepRunning = False;
+	client_keepRunning = false;
 }
 
 /*
  * Report the final statistics of the simulation
  */
 void client_reportFinalStats(clientThreadState *threadState) {
-	if (threadState->finishedLogging == False) {
+	if (threadState->finishedLogging == false) {
+
+		// FILE *histData = threadState->clientHistData;
 		FILE *clientLog = threadState->clientLog;
 		int threadID = threadState->threadID;
 		int clientReqGrpSize = threadState->clientReqGrpSize;
 		int clientID = threadState->clientID;
+
+		// TODO:
+		// Print out the values of the histogram to separate file to create CDF.
+		// hdr_percentiles_print(
+		// 	threadState->histogram,
+		// 	histData,			// File to write to
+		// 	10,					 	// Granularity of printed values
+		// 	1.0,					// Multiplier for results
+		// 	CSV 					// Format CLASSIC/CSV supported.
+		// );
 
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
@@ -327,19 +359,34 @@ void client_reportFinalStats(clientThreadState *threadState) {
 				"CLIENT %d\n"
 				"Final Statistics\n"
 				"-----------------------------\n"
-				"Average High Priority Request Completion Time = %Lf\n"
+				"High Priority Request Completion Stats:\n"
+				"  Average Time (sec) = %Lf\n" //TODO: Remove this redundant stat later.
+				"  Minimum Time (ns) = %ld\n"
+				"  Maximum Time (ns) = %ld\n"
+				"  Mean Time (ns) = %f\n"
+				"  Std Dev Time (ns) = %f\n"
+				"  95-percentile Time (ns) = %ld\n"
+				"  99-percentile Time (ns) = %ld\n"
 				"Number of High Priority Request Samples = %Lf\n"
 				"-----------------------------\n"
 				"Total Time = %Lf\n"
 				"Total Num Requests = %Lf\n"
 				"Requests/sec = %Lf\n"
 				"#####################################\n",
-				clientID, avgHPReqCT, threadState->numHPReqSamples, totalTime,
+				clientID, avgHPReqCT,
+				hdr_min(threadState->histogram),
+				hdr_max(threadState->histogram),
+				hdr_mean(threadState->histogram),
+				hdr_stddev(threadState->histogram),
+				hdr_value_at_percentile(threadState->histogram, 95),
+				hdr_value_at_percentile(threadState->histogram, 99),
+				threadState->numHPReqSamples, totalTime,
 				totalNumHPReqs, totalNumHPReqs/totalTime);
 
 		fclose(clientLog);
+		// fclose(histData);
 		printf("CLIENT %d -- THREAD %d ==> DONE reporting Stats\n", clientID, threadID);
-		threadState->finishedLogging = True;
+		threadState->finishedLogging = true;
 	}
 }
 
@@ -372,10 +419,8 @@ void client_ReceiveOne_spin(mpiMsg *msgBuf, int count, MPI_Datatype type, int so
 	MPI_Request req;
 	MPI_Irecv(msgBuf, count, type, source, tag, comm, &req);
 	/* Spin in user space waiting for the ACK to arrive */
-	bool flag = False;
-	while (flag == False) {
+	int flag = false; // used to be a bool, but MPI test wants an int.
+	while (flag == false) {
 		MPI_Test(&req,&flag,status);
 	}
 }
-
-

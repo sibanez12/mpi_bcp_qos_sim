@@ -1,6 +1,7 @@
 
 import sys
 import numpy as np
+import csv
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -46,7 +47,21 @@ def aggregateStats(stats):
     totalNumReqs = sum(stats.clientStats['totalNumReqs'])
     aggStats['totalNumReqs'] = totalNumReqs
     aggStats['avgReqPerSec'] = totalNumReqs / float(avgRunTime)
-    
+
+    # Take min of mins
+    aggStats['minCT'] = min(stats.clientStats['minCT'])
+
+    # Take max of max
+    aggStats['maxCT'] = max(stats.clientStats['maxCT'])
+
+    # take mean of mean and std dev. TODO: Should this be weighted?
+    aggStats['meanCT'] = np.mean(stats.clientStats['meanCT'])
+    aggStats['stddevCT'] = np.mean(stats.clientStats['stddevCT'])
+
+    # take worst-case times
+    aggStats['ninefiveCT'] = max(stats.clientStats['ninefiveCT'])
+    aggStats['ninenineCT'] = max(stats.clientStats['ninenineCT'])
+
     return aggStats
 
 
@@ -67,28 +82,82 @@ def computeAvgCT(avgCT_vec, numSamples_vec):
     return (aggAvgCT, totalNumSamples)
 
 """
-aggStats fields:
-    aggStats['avgCT']
-    aggStats['numSamples']
-    aggStats['avgRunTime']
-    aggStats['varRunTime']
-    aggStats['totalNumReqs']
-    aggStats['avgReqPerSec']
+finalAggStats fields:
+    finalAggStats['avgCT']
+    finalAggStats['numSamples']
+    finalAggStats['avgRunTime']
+    finalAggStats['varRunTime']
+    finalAggStats['totalNumReqs']
+    finalAggStats['avgReqPerSec']
+    finalAggStats['ninenineCT']
+    finalAggStats['ninefiveCT']
+    finalAggStats['meanCT']
+    finalAggStats['stddevCT']
+    finalAggStats['maxCT']
+    finalAggStats['minCT']
+
+For example:
+[{
+    'ninenineCT': 745471.0,
+    'meanCT': 57193.176768000005,
+    'stddevCT': 149781.17397,
+    'maxCT': 2195455.0,
+    'varRunTime': 9.0249999999916841e-11,
+    'numSamples': 74548.0,
+    'avgCT': 5.6999999999999996e-05,
+    'avgReqPerSec': 303138.1845012328,
+    'totalNumReqs': 745480.0,
+    'ninefiveCT': 233471.0,
+    'minCT': 2560.0,
+    'avgRunTime': 2.4592084999999999
+}]
 """
 def plotResults(finalAggStats, paramWithRange, rangeArgs):
     print "paramWithRange = ", paramWithRange
     xdata = rangeArgs[paramWithRange]
     print "xdata = ", xdata
 
+    # # plot the average completion time
+    # makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgCT',
+    #     "Average Completion Time ($\mu$s)", 'Average Completion Time vs. ' + paramWithRange,
+    #     './plots/Average_Completion_Time_vs_' + paramWithRange, 1e6)
     # plot the average completion time
-    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgCT', 
-        "Average Completion Time ($\mu$s)", 'Average Completion Time vs. ' + paramWithRange,
-        './plots/Average_Completion_Time_vs_' + paramWithRange, 1e6)
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'meanCT',
+        "Mean Completion Time ($\mu$s)", 'Mean Completion Time vs. ' + paramWithRange,
+        './plots/Mean_Completion_Time_vs_' + paramWithRange, 1e-3)
 
     plt.cla()
-    
+
+    # Plot 99% latency
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'ninenineCT',
+        "99-Percentile Completion Time ($\mu$s)", '99-Percentile Completion Time vs. ' + paramWithRange,
+        './plots/99_Completion_Time_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
+    # Plot 95% latency
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'ninefiveCT',
+        "95-Percentile Completion Time ($\mu$s)", '95-Percentile Completion Time vs. ' + paramWithRange,
+        './plots/95_Completion_Time_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
+    # Plot Max latency
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'maxCT',
+        "Maximum Completion Time ($\mu$s)", 'Maximum Completion Time vs. ' + paramWithRange,
+        './plots/Max_Completion_Time_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
+    # Plot Min latency
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'minCT',
+        "Minimum Completion Time ($\mu$s)", 'Minimum Completion Time vs. ' + paramWithRange,
+        './plots/Min_Completion_Time_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
     # plot the average number of requests/sec completed
-    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgReqPerSec', 
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgReqPerSec',
         "Avg Num Requests/Sec Completed (1000's)", 'Throughput vs. ' + paramWithRange,
         './plots/Throughput_vs_' + paramWithRange, 1e-3)
 
@@ -103,7 +172,7 @@ def makePlot(finalAggStats, paramWithRange, rangeArgs, measuredParam, ylabel, ti
     plt.xlabel(paramWithRange)
     plt.title(title)
     plt.grid()
-    
+
     text = makePlotDesc(rangeArgs)
     plt.figtext(.06, .06, text, fontsize='x-small')
 
