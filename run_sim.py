@@ -174,33 +174,11 @@ def printExperimentSummaries(finalStats, printUtilization):
         stats.printExpSummary(printUtilization)
         i += 1
 
-def gethostnames():
-    with open('hostnames') as f:
-        hostnames = f.readlines()
-
-    hosts = []
-    for h in hostnames:
-        hosts.append(h[:-1])
-    return hosts
-
-"""
-Make the hostfile used to start the MPI job
-"""
-def makeHostFile(procsPerHost):
-    hosts = gethostnames() 
-
-    with open('hosts', 'w') as f:
-        for host in hosts:
-            f.write(host + ':' + str(procsPerHost) + '\n')
 
 def makeMPI_runCmd(procsPerHost):
-    OMPI_RUN_CMD = ['mpirun', '--mca', 'btl_openib_warn_default_gid_prefix', '0',
-    '--mca', 'btl', '^tcp', '-npernode', str(procsPerHost), '--hostfile', 'hostfile.ompi', '--bind-to', 'none']
+    OMPI_RUN_CMD = ['mpirun', '-npernode', str(procsPerHost), '--hostfile', 'hostfile.ompi', '--bind-to', 'none']
 
-    makeHostFile(procsPerHost)
-    MVAPICH2_RUN_CMD = ['mpiexec', '-f', 'hosts', '-env', 'MV2_SMP_USE_CMA=0', '-env', 'MV2_ENABLE_AFFINITY=0']
-
-    return MVAPICH2_RUN_CMD if (MPI_IMPL == 'MVAPICH2') else OMPI_RUN_CMD
+    return OMPI_RUN_CMD
 
 def runCommand(command, working_directory='.', shell=False):
     print '---------------------------------------'

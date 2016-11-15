@@ -197,7 +197,7 @@ bool client_shouldSend(int rate, struct timespec *lastPKtSendTime) {
 
 	struct timespec curr_minus_ipg;
 	int r = timespec_subtract (&curr_minus_ipg, &curr_time, &ipg);
-	if (r == 1) printf("ERROR: current_time - ipg < 0\n");
+	if (r == 1) return False;
 
 	struct timespec temp;
 	bool shouldSendReq = timespec_subtract(&temp, lastPKtSendTime, &curr_minus_ipg);
