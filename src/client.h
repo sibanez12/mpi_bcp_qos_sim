@@ -50,7 +50,7 @@ typedef struct clientThreadState_s {
 	int numHosts;
 	unsigned long int seed;
 	FILE *clientLog;
-  FILE *clientHistData;
+	FILE *clientHistData;
 	struct hdr_histogram* histogram;
 	bool finishedLogging;
 	struct timespec lastLPReqTime;

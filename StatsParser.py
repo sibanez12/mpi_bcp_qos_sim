@@ -3,14 +3,6 @@ This class parses the output files of the simulation
 """
 
 import sys, os, re
-import csv
-import numpy as np
-from collections import deque
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-
 
 class StatsParser:
     """
@@ -85,28 +77,9 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
                     self.parse_stats_log(fname, self.SERVER)
 
     def parse_histogram_log(self, filename):
-        # To make indexing more readable
-        VALUE = 0
-        PERCENTILE = 1
-        TOTALCOUNT = 2
-        percentiles = deque()
-        latencies = deque()
-        # with open(filename, 'rb') as csvfile:
-        #     reader = csv.reader(csvfile, delimiter=',')
-        #     for row in reader:
-        #         if row[VALUE] == "Value":
-        #             continue
-        #
-        #         latencies.append(float(row[VALUE]) / 1000000) #convert to milliseconds
-        #         percentiles.append(float(row[PERCENTILE]))
-        #
-        # plt.plot(latencies, percentiles)
-        # plt.xlabel("Latency (milliseconds)")
-        # plt.ylabel("Cumulative Probability")
-        # plt.title("CDF")
-        # plt.grid(True)
-        # plt.savefig("test.png")
-
+        # TODO: Placeholder for the unique processing that will be done to plot
+        # CDFs in the future.
+        return
 
     def parse_stats_log(self, filename, logType):
         if logType == self.CLIENT:

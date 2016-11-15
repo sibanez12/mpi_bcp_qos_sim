@@ -46,10 +46,8 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.597238623.483822752" name="hdr_histogram_log.h" rcbsApplicability="disable" resourcePath="src/hdr_histogram_log.h" toolsToInvoke=""/>
-					<fileInfo id="cdt.managedbuild.config.gnu.exe.debug.597238623.280665374" name="hdr_tests.h" rcbsApplicability="disable" resourcePath="src/hdr_tests.h" toolsToInvoke=""/>
 					<sourceEntries>
-						<entry excluding="hdr_tests.h|hdr_histogram_log.h|hdr_histogram_log.c|test.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="test.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -116,5 +114,12 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/mpi_bcp_qos_sim"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/mpi_bcp_qos_sim"/>
+		</configuration>
+	</storageModule>
 </cproject>

@@ -61,9 +61,9 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	char filename[100];
 	sprintf(filename, "./out/Client-%d.log", clientID); // different log for each client process
 	threadState.clientLog = initLog(filename, rankMap);
-	char histfile[100];
-	sprintf(histfile, "./out/Client-%d.hist", clientID); // different Hist Data for each client process
-	threadState.clientHistData = initHistData(histfile, rankMap);
+	// char histfile[100];
+	// sprintf(histfile, "./out/Client-%d.hist", clientID); // different Hist Data for each client process
+	// threadState.clientHistData = initHistData(histfile, rankMap);
 	threadState.finishedLogging = False;
 	struct timespec curr_time;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(curr_time));
@@ -81,9 +81,9 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 
 	// Initialise the histogram
 	hdr_init(
-			1,	// Minimum value
-			INT64_C(2000000000),	// Maximum value
-			2,	// Number of significant figures
+			1,										// Minimum value = 1 ns
+			INT64_C(10000000000),	// Maximum value = 10 s
+			2,										// Number of significant figures after decimal
 			&(threadState.histogram) // Pointer to initialise
 	);
 	DEBUG_PRINT(("Initializing Histogram for client %d (%p) at %p\n", clientID, (void*)&threadState, (void*) &(threadState.histogram)));
@@ -191,7 +191,8 @@ void client_updateStats(clientThreadState *threadState) {
 	threadState->numHPReqSamples += 1;
 
 	long double latency_d = timespec_to_double(&latency);
-//	DEBUG_HIST_PRINT(("Latency: %Lf\n", latency_d*1000000000));
+	// Log the latency value into the histogram in nanoseconds since HdrHistogram
+	// takes integers as input.
 	hdr_record_value(
 			threadState->histogram,
 			(int64_t)(latency_d*1000000000)
@@ -216,7 +217,7 @@ bool client_shouldSend(int rate, struct timespec *lastPKtSendTime) {
 
 	struct timespec curr_minus_ipg;
 	int r = timespec_subtract (&curr_minus_ipg, &curr_time, &ipg);
-	//if (r == 1) printf("ERROR: current_time - ipg < 0\n");
+	if (r == 1) printf("ERROR: current_time - ipg < 0\n");
 
 	struct timespec temp;
 	bool shouldSendReq = timespec_subtract(&temp, lastPKtSendTime, &curr_minus_ipg);
@@ -327,24 +328,21 @@ void client_intHandler(int sig_num) {
 void client_reportFinalStats(clientThreadState *threadState) {
 	if (threadState->finishedLogging == False) {
 
-		FILE *histData = threadState->clientHistData;
+		// FILE *histData = threadState->clientHistData;
 		FILE *clientLog = threadState->clientLog;
 		int threadID = threadState->threadID;
 		int clientReqGrpSize = threadState->clientReqGrpSize;
 		int clientID = threadState->clientID;
 
+		// TODO:
 		// Print out the values of the histogram to separate file to create CDF.
-		hdr_percentiles_print(
-			threadState->histogram,
-				histData,		// File to write to
-				10,					 // Granularity of printed values
-				1.0,					// Multiplier for results
-				CSV 					// Format CLASSIC/CSV supported.
-		);
-
-		// TODO: We can add these types of prints to the normal log as well.
-		// fprintf(clientLog, "99 Value: %ld\n", hdr_value_at_percentile(threadState->histogram, 99));
-		// fprintf(clientLog, "15 Value: %ld\n", hdr_value_at_percentile(threadState->histogram, 15));
+		// hdr_percentiles_print(
+		// 	threadState->histogram,
+		// 	histData,			// File to write to
+		// 	10,					 	// Granularity of printed values
+		// 	1.0,					// Multiplier for results
+		// 	CSV 					// Format CLASSIC/CSV supported.
+		// );
 
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
@@ -361,14 +359,14 @@ void client_reportFinalStats(clientThreadState *threadState) {
 				"CLIENT %d\n"
 				"Final Statistics\n"
 				"-----------------------------\n"
-        "High Priority Request Completion Stats:\n"
+				"High Priority Request Completion Stats:\n"
 				"  Average Time (sec) = %Lf\n" //TODO: Remove this redundant stat later.
-        "  Minimum Time (ns) = %ld\n"
-        "  Maximum Time (ns) = %ld\n"
-        "  Mean Time (ns) = %f\n"
-        "  Std Dev Time (ns) = %f\n"
-        "  95-percentile Time (ns) = %ld\n"
-        "  99-percentile Time (ns) = %ld\n"
+				"  Minimum Time (ns) = %ld\n"
+				"  Maximum Time (ns) = %ld\n"
+				"  Mean Time (ns) = %f\n"
+				"  Std Dev Time (ns) = %f\n"
+				"  95-percentile Time (ns) = %ld\n"
+				"  99-percentile Time (ns) = %ld\n"
 				"Number of High Priority Request Samples = %Lf\n"
 				"-----------------------------\n"
 				"Total Time = %Lf\n"
@@ -376,17 +374,17 @@ void client_reportFinalStats(clientThreadState *threadState) {
 				"Requests/sec = %Lf\n"
 				"#####################################\n",
 				clientID, avgHPReqCT,
-        hdr_min(threadState->histogram),
-        hdr_max(threadState->histogram),
-        hdr_mean(threadState->histogram),
-        hdr_stddev(threadState->histogram),
-        hdr_value_at_percentile(threadState->histogram, 95),
-        hdr_value_at_percentile(threadState->histogram, 99),
-        threadState->numHPReqSamples, totalTime,
+				hdr_min(threadState->histogram),
+				hdr_max(threadState->histogram),
+				hdr_mean(threadState->histogram),
+				hdr_stddev(threadState->histogram),
+				hdr_value_at_percentile(threadState->histogram, 95),
+				hdr_value_at_percentile(threadState->histogram, 99),
+				threadState->numHPReqSamples, totalTime,
 				totalNumHPReqs, totalNumHPReqs/totalTime);
 
 		fclose(clientLog);
-		fclose(histData);
+		// fclose(histData);
 		printf("CLIENT %d -- THREAD %d ==> DONE reporting Stats\n", clientID, threadID);
 		threadState->finishedLogging = True;
 	}

@@ -10,18 +10,10 @@
 
 //#define DEBUG
 
-#define DEBUG_HIST
-
 #ifdef DEBUG
 # define DEBUG_PRINT(x) printf x
 #else
 # define DEBUG_PRINT(x) do {} while (0)
-#endif
-
-#ifdef DEBUG_HIST
-# define DEBUG_HIST_PRINT(x) printf x
-#else
-# define DEBUG_HIST_PRINT(x) do {} while (0)
 #endif
 
 #define BUFSIZE 100
@@ -29,6 +21,8 @@
 #define BYTES_TO_READ 512
 #define BYTES_TO_WRITE 512
 
+// NOTE: Moved to using stdbool.h, which defines bool, and true=1, false=0.
+// We could elminate the "True" and "False" defines if we switched to lowercase.
 //typedef int bool;
 #define True 1
 #define False 0
