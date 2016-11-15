@@ -82,7 +82,7 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	// Initialise the histogram
 	hdr_init(
 			1,										// Minimum value = 1 ns
-			INT64_C(10000000000),	// Maximum value = 10 s
+			INT64_C(10 * NSEC_PER_SEC),	// Maximum value = 10 s
 			2,										// Number of significant figures after decimal
 			&(threadState.histogram) // Pointer to initialise
 	);
@@ -195,7 +195,7 @@ void client_updateStats(clientThreadState *threadState) {
 	// takes integers as input.
 	hdr_record_value(
 			threadState->histogram,
-			(int64_t)(latency_d*1000000000)
+			(int64_t)(latency_d*NSEC_PER_SEC)
 	);
 
 	threadState->avgHPReqCTsum += latency_d;
