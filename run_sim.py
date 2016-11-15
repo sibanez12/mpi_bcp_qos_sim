@@ -176,7 +176,7 @@ def printExperimentSummaries(finalStats, printUtilization):
 
 
 def makeMPI_runCmd(procsPerHost):
-    OMPI_RUN_CMD = ['mpirun', '-npernode', str(procsPerHost), '--hostfile', 'hostfile.ompi', '--bind-to', 'none']
+    OMPI_RUN_CMD = ['mpirun', '-npernode', str(procsPerHost), '--hostfile', 'hostfile.ompi', '--bind-to', 'core', '--report-bindings']
 
     return OMPI_RUN_CMD
 
