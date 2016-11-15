@@ -80,9 +80,10 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	threadState.warmupCount = 0;
 
 	// Initialise the histogram
+
 	hdr_init(
 			1,										// Minimum value = 1 ns
-			INT64_C(10 * NSEC_PER_SEC),	// Maximum value = 10 s
+			INT64_C(10000000000),	// Maximum value = 10 s
 			2,										// Number of significant figures after decimal
 			&(threadState.histogram) // Pointer to initialise
 	);
@@ -217,7 +218,7 @@ bool client_shouldSend(int rate, struct timespec *lastPKtSendTime) {
 
 	struct timespec curr_minus_ipg;
 	int r = timespec_subtract (&curr_minus_ipg, &curr_time, &ipg);
-	if (r == 1) return False;
+	if (r == 1) return false;
 
 	struct timespec temp;
 	bool shouldSendReq = timespec_subtract(&temp, lastPKtSendTime, &curr_minus_ipg);
