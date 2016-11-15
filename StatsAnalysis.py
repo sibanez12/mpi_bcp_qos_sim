@@ -1,6 +1,7 @@
 
 import sys
 import numpy as np
+import csv
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -46,7 +47,21 @@ def aggregateStats(stats):
     totalNumReqs = sum(stats.clientStats['totalNumReqs'])
     aggStats['totalNumReqs'] = totalNumReqs
     aggStats['avgReqPerSec'] = totalNumReqs / float(avgRunTime)
-    
+
+    # Take min of mins
+    aggStats['minCT'] = min(stats.clientStats['minCT'])
+
+    # Take max of max
+    aggStats['maxCT'] = max(stats.clientStats['maxCT'])
+
+    # take mean of mean and std dev. TODO: Should this be weighted?
+    aggStats['meanCT'] = np.mean(stats.clientStats['meanCT'])
+    aggStats['stddevCT'] = np.mean(stats.clientStats['stddevCT'])
+
+    # take worst-case times
+    aggStats['ninefiveCT'] = max(stats.clientStats['ninefiveCT'])
+    aggStats['ninenineCT'] = max(stats.clientStats['ninenineCT'])
+
     return aggStats
 
 
@@ -74,6 +89,12 @@ aggStats fields:
     aggStats['varRunTime']
     aggStats['totalNumReqs']
     aggStats['avgReqPerSec']
+    aggStats['ninenineCT']
+    aggStats['ninefiveCT']
+    aggStats['meanCT']
+    aggStats['stddevCT']
+    aggStats['maxCT']
+    aggStats['minCT']
 """
 def plotResults(finalAggStats, paramWithRange, rangeArgs):
     print "paramWithRange = ", paramWithRange
@@ -81,14 +102,14 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs):
     print "xdata = ", xdata
 
     # plot the average completion time
-    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgCT', 
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgCT',
         "Average Completion Time ($\mu$s)", 'Average Completion Time vs. ' + paramWithRange,
         './plots/Average_Completion_Time_vs_' + paramWithRange, 1e6)
 
     plt.cla()
-    
+
     # plot the average number of requests/sec completed
-    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgReqPerSec', 
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgReqPerSec',
         "Avg Num Requests/Sec Completed (1000's)", 'Throughput vs. ' + paramWithRange,
         './plots/Throughput_vs_' + paramWithRange, 1e-3)
 
@@ -103,7 +124,7 @@ def makePlot(finalAggStats, paramWithRange, rangeArgs, measuredParam, ylabel, ti
     plt.xlabel(paramWithRange)
     plt.title(title)
     plt.grid()
-    
+
     text = makePlotDesc(rangeArgs)
     plt.figtext(.06, .06, text, fontsize='x-small')
 

@@ -2,7 +2,15 @@
 This class parses the output files of the simulation
 """
 
-import sys, os, re 
+import sys, os, re
+import csv
+import numpy as np
+from collections import deque
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 class StatsParser:
     """
@@ -10,15 +18,15 @@ class StatsParser:
     and accumulates the statistics for the simulation.
     """
 
-    def __init__(self, directory, clientThreadsPerHost):
+    def __init__(self, directory):
         self.rootdir = directory
         self.logFiles = []
         self.clientStats = {}
         self.serverStats = {}
-        self.clientThreadsPerHost = clientThreadsPerHost
 
         self.CLIENT = 0
         self.SERVER = 1
+        self.CLIENT_HIST = 2
 
         # Maps: server rank ==> num SYNC messages received
         self.server_utilization = {'numREQmsgs':{}}
@@ -30,7 +38,14 @@ class StatsParser:
 CLIENT (?P<rank>[0-9]*)
 Final Statistics
 -----------------------------
-Average High Priority Request Completion Time = (?P<avgCT>[-\d\.infa]*)
+High Priority Request Completion Stats:
+  Average Time \(sec\) = (?P<avgCT>[-\d\.infa]*)
+  Minimum Time \(ns\) = (?P<minCT>[\d\.]*)
+  Maximum Time \(ns\) = (?P<maxCT>[\d\.]*)
+  Mean Time \(ns\) = (?P<meanCT>[\d\.]*)
+  Std Dev Time \(ns\) = (?P<stddevCT>[\d\.]*)
+  95-percentile Time \(ns\) = (?P<ninefiveCT>[\d\.]*)
+  99-percentile Time \(ns\) = (?P<ninenineCT>[\d\.]*)
 Number of High Priority Request Samples = (?P<numSamples>[-\d\.]*)
 -----------------------------
 Total Time = (?P<totalTime>[-\d\.]*)
@@ -56,17 +71,42 @@ SERVER (?P<rank>[0-9]*) - THREAD ID: (?P<threadID>[0-9]*)
 Num High Priority REQUEST msgs = (?P<numHPReqMsgs>[\d\.]*)
 Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
 ###########################"""
-
         self.parse_results()
 
     def parse_results(self):
         for subdir, dirs, files in os.walk(self.rootdir):
             for filename in files:
                 fname = os.path.join(subdir, filename)
-                if (re.search("Client", filename)):
+                if (re.search("Client.*.log", filename)):
                     self.parse_stats_log(fname, self.CLIENT)
+                elif (re.search("Client.*.hist", filename)):
+                    self.parse_histogram_log(fname)
                 elif (re.search("Server", filename)):
                     self.parse_stats_log(fname, self.SERVER)
+
+    def parse_histogram_log(self, filename):
+        # To make indexing more readable
+        VALUE = 0
+        PERCENTILE = 1
+        TOTALCOUNT = 2
+        percentiles = deque()
+        latencies = deque()
+        # with open(filename, 'rb') as csvfile:
+        #     reader = csv.reader(csvfile, delimiter=',')
+        #     for row in reader:
+        #         if row[VALUE] == "Value":
+        #             continue
+        #
+        #         latencies.append(float(row[VALUE]) / 1000000) #convert to milliseconds
+        #         percentiles.append(float(row[PERCENTILE]))
+        #
+        # plt.plot(latencies, percentiles)
+        # plt.xlabel("Latency (milliseconds)")
+        # plt.ylabel("Cumulative Probability")
+        # plt.title("CDF")
+        # plt.grid(True)
+        # plt.savefig("test.png")
+
 
     def parse_stats_log(self, filename, logType):
         if logType == self.CLIENT:
@@ -76,7 +116,6 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
         else:
             print >> sys.stderr, "ERROR: trying to process unkown log type"
             sys.exit(1)
-
         with open(filename) as f:
             log = f.read()
             searchObj = re.search(log_format, log)
@@ -122,4 +161,3 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
                     self.serverStats[key] = [val]
                 else:
                     self.serverStats[key].append(val)
-

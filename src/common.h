@@ -174,6 +174,8 @@ void writeServerMap(FILE *fp, serverEntry *serverMap, int numServers, int numHPT
 
 FILE *initLog(char *filename, rankEntry *rankMap);
 
+FILE *initHistData(char *filename, rankEntry *rankMap);
+
 void printThreadSupport();
 
 #endif /* COMMON_H_ */
