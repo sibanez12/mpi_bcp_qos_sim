@@ -149,6 +149,13 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs):
 
     plt.cla()
 
+    # Plot Min latency
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'minCT',
+        "Minimum Completion Time ($\mu$s)", 'Minimum Completion Time vs. ' + paramWithRange,
+        './plots/Min_Completion_Time_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
     # plot the average number of requests/sec completed
     makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgReqPerSec',
         "Avg Num Requests/Sec Completed (1000's)", 'Throughput vs. ' + paramWithRange,
