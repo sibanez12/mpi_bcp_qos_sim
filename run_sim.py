@@ -174,25 +174,6 @@ def printExperimentSummaries(finalStats, printUtilization):
         stats.printExpSummary(printUtilization)
         i += 1
 
-def gethostnames():
-    with open('hostnames') as f:
-        hostnames = f.readlines()
-
-    hosts = []
-    for h in hostnames:
-        hosts.append(h[:-1])
-    return hosts
-
-"""
-Make the hostfile used to start the MPI job
-"""
-def makeHostFile(procsPerHost):
-    hosts = gethostnames()
-
-    with open('hosts', 'w') as f:
-        for host in hosts:
-            f.write(host + ':' + str(procsPerHost) + '\n')
-
 def makeMPI_runCmd(procsPerHost):
     OMPI_RUN_CMD = ['mpirun', '-npernode', str(procsPerHost), '--hostfile', 'hostfile.ompi', '--bind-to', 'core', '--report-bindings']
 
