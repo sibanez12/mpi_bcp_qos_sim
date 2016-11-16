@@ -9,7 +9,7 @@ from StatsParser import StatsParser
 from StatsAnalysis import *
 import pexpect
 
-SIM_RUN_TIME = 30
+SIM_RUN_TIME = 10
 OUTPUT_DIR = "./out/"
 BUILD = "./Debug"
 SIM_LOGGING_TIME = 5
@@ -18,14 +18,23 @@ MPI_IMPL = 'OMPI'
 
 def kill_sim(process):
     sleep(SIM_RUN_TIME)
-    if (process.poll() is None):
-        print "sending SIGUSR1"
-        process.send_signal(signal.SIGUSR1)
+    if (process.isalive()):
+        print "[info] sending " + str(signal.SIGUSR1) + " to pid: " + str(process.pid)
+        process.kill(signal.SIGUSR1)
     sleep(SIM_LOGGING_TIME) # wait for the sim to finish up and write results
     print "killing process"
-    process.terminate()
+    process.close()
 
-    # process.wait()
+# def kill_sim(process):
+#     sleep(SIM_RUN_TIME)
+#     if (process.poll() is None):
+#         print "sending " + str(signal.SIGUSR1) + " to pid: " + str(process.pid)
+#         process.send_signal(signal.SIGUSR1)
+#     sleep(SIM_LOGGING_TIME) # wait for the sim to finish up and write results
+#     print "killing process"
+#     process.terminate()
+#
+#     # process.wait()
 
 def run_sim(args, numHosts=None):
 
@@ -82,30 +91,34 @@ def run_sim(args, numHosts=None):
     #   3. No password is asked for because you have a key or something.
     # code from http://linux.byexamples.com/archives/346/python-how-to-access-ssh-with-pexpect/
     ssh_newkey = "Are you sure you want to continue connecting"
-    p = pexpect.spawn(simArgs)
-
-    i = p.expect([ssh_newkey, "Password:", pexpect.EOF])
+    p = pexpect.spawn(simArgs[0], simArgs[1:])
+    p.logfile_read = sys.stdout # only log what the child process sends back
+    i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
     if i == 0:
         print "[info] Saying yes to first time connection."
         p.sendline("yes")
-        i = p.expect([ssh_newkey, "Password:", pexpect.EOF])
+        i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
     if i == 1:
         print "[info] Providing user password."
         p.sendline("fill_in_individually")
         p.expect(pexpect.EOF)
     elif i == 2:
-        print "[info] Either had a key or the connection timed out."
+        print "[info] Looks like I had the key."
         pass
-    print p.before # print result
+    elif i == 3:
+        # print "[info] No prompt seen, assuming it's ok and proceeding."
+        pass
 
     # p = subprocess.Popen(simArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    print "[info] Launching sim at pid: " + str(p.pid)
     killer_thread = Thread(target = kill_sim, args = (p, ))
     killer_thread.start()
-    for line in iter(p.stdout.readline, ''):
-        sys.stdout.write(line)
+    # for line in iter(p.stdout.readline, ''):
+    #     sys.stdout.write(line)
     killer_thread.join()
-    p.wait()
-    print "Process finished with returncode: ", p.returncode
+    while(p.isalive()):
+        pass
+    print "Process finished with returncode: ", p.exitstatus
 
     stats = StatsParser(OUTPUT_DIR)
     return stats
