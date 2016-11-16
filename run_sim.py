@@ -101,7 +101,7 @@ def run_sim(args, numHosts=None):
     if i == 1:
         print "\n[info] Providing user password."
         p.sendline(KEY)
-        j = p.expect([".*denied.*", pexpect.EOF, pexpect.TIMEOUT], timeout=2])
+        j = p.expect([".*denied.*", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
         if j == 0:
             sys.exit("\n[ERROR] Did you fill in your password?")
         elif j == 3:
