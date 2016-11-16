@@ -1,3 +1,4 @@
+#!/usr/bin/env pytho
 
 import sys, subprocess, socket, os
 import shutil, re, shlex, getpass
@@ -6,6 +7,7 @@ from threading import Thread
 from time import sleep
 from StatsParser import StatsParser
 from StatsAnalysis import *
+import pexpect
 
 SIM_RUN_TIME = 30
 OUTPUT_DIR = "./out/"
@@ -65,7 +67,7 @@ def run_sim(args, numHosts=None):
                 '--clientLPReqRate', str(args['clientLPReqRate']),
                 '--clientReqGrpSize', str(args['clientReqGrpSize']),
                 '--coresForHPThreads', str(args['coresForHPThreads'])]
-        print "command: \n", ' '.join(simArgs)
+        print "[info] command: \n", ' '.join(simArgs)
 
     # Delete current contents of the output directory
     try:
@@ -74,7 +76,29 @@ def run_sim(args, numHosts=None):
         pass
     os.mkdir(OUTPUT_DIR)
 
-    p = subprocess.Popen(simArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    # Want to handle 3 scenarios:
+    #   1. First time connecting, which will ask "Are you sure you want to continue connecting?"
+    #   2. Just asking for password
+    #   3. No password is asked for because you have a key or something.
+    # code from http://linux.byexamples.com/archives/346/python-how-to-access-ssh-with-pexpect/
+    ssh_newkey = "Are you sure you want to continue connecting"
+    p = pexpect.spawn(simArgs)
+
+    i = p.expect([ssh_newkey, "Password:", pexpect.EOF])
+    if i == 0:
+        print "[info] Saying yes to first time connection."
+        p.sendline("yes")
+        i = p.expect([ssh_newkey, "Password:", pexpect.EOF])
+    if i == 1:
+        print "[info] Providing user password."
+        p.sendline("fill_in_individually")
+        p.expect(pexpect.EOF)
+    elif i == 2:
+        print "[info] Either had a key or the connection timed out."
+        pass
+    print p.before # print result
+
+    # p = subprocess.Popen(simArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     killer_thread = Thread(target = kill_sim, args = (p, ))
     killer_thread.start()
     for line in iter(p.stdout.readline, ''):
@@ -179,11 +203,11 @@ def makeMPI_runCmd(procsPerHost):
 
     return OMPI_RUN_CMD
 
-def runCommand(command, working_directory='.', shell=False):
-    print '---------------------------------------'
-    print "Running command: $ ", command
-    print '---------------------------------------'
-    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=working_directory, shell=shell)
-    for line in iter(p.stdout.readline, ''):
-        sys.stdout.write(line)
-    p.wait()
+# def runCommand(command, working_directory='.', shell=False):
+#     print '---------------------------------------'
+#     print "Running command: $ ", command
+#     print '---------------------------------------'
+#     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=working_directory, shell=shell)
+#     for line in iter(p.stdout.readline, ''):
+#         sys.stdout.write(line)
+#     p.wait()
