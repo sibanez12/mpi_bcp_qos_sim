@@ -13,6 +13,7 @@ SIM_RUN_TIME = 30
 OUTPUT_DIR = "./out/"
 BUILD = "./Debug"
 SIM_LOGGING_TIME = 5
+KEY = "fill_in_pass"
 
 MPI_IMPL = 'OMPI'
 
@@ -99,7 +100,7 @@ def run_sim(args, numHosts=None):
         i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
     if i == 1:
         print "\n[info] Providing user password."
-        p.sendline("fill_in_individually")
+        p.sendline(KEY)
         j = p.expect([".*denied.*", pexpect.EOF, pexpect.TIMEOUT], timeout=2])
         if j == 0:
             sys.exit("\n[ERROR] Did you fill in your password?")
