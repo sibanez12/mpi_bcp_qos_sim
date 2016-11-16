@@ -254,7 +254,7 @@ int main (int argc, char **argv)
 	coresForHPThreads = strtol(coresForHPThreads_s, &ptr, base);
 
 	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverProcessingTime >= 0 &&
-			serverNetLoad >= 0 && clientHPReqRate > 0 && clientLPReqRate > 0 && clientReqGrpSize > 0 &&
+			serverNetLoad >= 0 && clientHPReqRate >= 0 && clientLPReqRate >= 0 && clientReqGrpSize > 0 &&
 			coresForHPThreads >= 0);
 	assert(coresForHPThreads < serverThreadsPerHost);
 

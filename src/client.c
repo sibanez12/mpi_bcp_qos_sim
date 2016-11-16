@@ -209,6 +209,10 @@ void client_updateStats(clientThreadState *threadState) {
  */
 bool client_shouldSend(int rate, struct timespec *lastPKtSendTime) {
 
+	if (rate == 0) {
+		return false;
+	}
+
 	struct timespec curr_time;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &curr_time);
 
