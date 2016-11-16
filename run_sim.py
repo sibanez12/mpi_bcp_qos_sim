@@ -9,7 +9,7 @@ from StatsParser import StatsParser
 from StatsAnalysis import *
 import pexpect
 
-SIM_RUN_TIME = 10
+SIM_RUN_TIME = 30
 OUTPUT_DIR = "./out/"
 BUILD = "./Debug"
 SIM_LOGGING_TIME = 5
@@ -37,7 +37,6 @@ def kill_sim(process):
 #     # process.wait()
 
 def run_sim(args, numHosts=None):
-
     procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
 
     if (socket.gethostname() == 'ubuntu'):
@@ -95,15 +94,19 @@ def run_sim(args, numHosts=None):
     p.logfile_read = sys.stdout # only log what the child process sends back
     i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
     if i == 0:
-        print "[info] Saying yes to first time connection."
+        print "\n[info] Saying yes to first time connection."
         p.sendline("yes")
         i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
     if i == 1:
-        print "[info] Providing user password."
+        print "\n[info] Providing user password."
         p.sendline("fill_in_individually")
-        p.expect(pexpect.EOF)
+        j = p.expect([".*denied.*", pexpect.EOF, pexpect.TIMEOUT], timeout=2])
+        if j == 0:
+            sys.exit("\n[ERROR] Did you fill in your password?")
+        elif j == 3:
+            pass
     elif i == 2:
-        print "[info] Looks like I had the key."
+        print "\n[info] Looks like I had the key."
         pass
     elif i == 3:
         # print "[info] No prompt seen, assuming it's ok and proceeding."
