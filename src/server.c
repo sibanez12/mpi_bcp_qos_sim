@@ -121,7 +121,10 @@ void server_runThread(serverThreadState *threadState) {
 			} else {
 				/* Create server-2-server network load */
 				int tag = getFirstOne(threadState->continuationVector);
-				/* FIXME: Handle the case where the bitVector is full */
+				/* FIXME: Handle the case where the bitVector is full
+                                 * This will only occur if the clients don't block in
+                                 * every HP request any more.
+                                 */
 				serverCreateNetworkRequest(threadState, comm, tag);
 				clearBit(threadState->continuationVector, tag);
 				/* Initialize the continuation for this request */
@@ -139,14 +142,7 @@ void server_runThread(serverThreadState *threadState) {
 
 			/* Create server-2-server network load if required */
 			if (threadState->serverNetLoad != 0) {
-				int tag = getFirstOne(threadState->continuationVector);
-				/* FIXME: Handle the case where the continuation vector is full */
-				serverCreateNetworkRequest(threadState, comm, tag);
-				clearBit(threadState->continuationVector, tag);
-				/* Initialize the continuation for this request */
-				threadState->continuations[tag].replyCount = 0;
-				threadState->continuations[tag].numRepliesNeeded = threadState->serverNetLoad;
-				threadState->continuations[tag].originClientRank = status.MPI_SOURCE;
+				serverCreateNetworkRequest(threadState, comm, 0);
 			}
 
 		/* Receive HP request from a server */
