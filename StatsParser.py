@@ -14,6 +14,7 @@ from numpy import ma
 from matplotlib import scale as mscale
 from matplotlib import transforms as mtransforms
 from matplotlib.ticker import FixedFormatter, FixedLocator
+import datetime
 
 # Class used to get a nice scale zoomed in on 1 for the y-axis. Code from
 # http://stackoverflow.com/questions/31147893/logarithmic-plot-of-a-cumulative-distribution-function-in-matplotlib
@@ -76,8 +77,6 @@ class StatsParser:
     This class parses the log files in the output directory
     and accumulates the statistics for the simulation.
     """
-    callCount = 0;
-
     def __init__(self, directory):
         self.rootdir = directory
         self.logFiles = []
@@ -145,17 +144,25 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
                     self.parse_histogram_log(fname)
                 elif (re.search("Server", filename)):
                     self.parse_stats_log(fname, self.SERVER)
-        # Create single plot
-        print "[info] Saving CDF."
+
+        # Materialize single plot for each similation
+        print "[info] Saving Client CDF."
         plt.xlabel("Latency (milliseconds)")
         plt.xscale('log')
         plt.yscale('close_to_one', nines=4)
         plt.ylabel("Cumulative Probability")
+        # Decided to not try and print a legend
         # lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
         plt.title("CDF")
         plt.grid(True)
+        date = str(datetime.datetime.now())
+        date = '_' + date[:date.find('.')].replace(' ', '_')
+        # TODO: Probably want a PDF output with the same format as the others
         # pp = PdfPages("./plots/ClientCDF_" + str(self.callCount) + ".pdf")
-        plt.savefig("./plots/ClientCDF_" + str(self.callCount) + ".png") #, bbox_extra_artists=(lgd,), bbox_inches='tight')
+        filename = "./plots/ClientCDF_" + date + ".png"
+        plt.savefig(filename) #, bbox_extra_artists=(lgd,), bbox_inches='tight')
+
+        plt.clf() # clear figure for next iteration
 
     def parse_histogram_log(self, filename):
         # To make indexing more readable
