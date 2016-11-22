@@ -13,7 +13,7 @@ SIM_RUN_TIME = 30
 OUTPUT_DIR = "./out/"
 BUILD = "./Debug"
 SIM_LOGGING_TIME = 5
-KEY = "fill_in_pass"
+KEY = open('pass.txt', 'r').readline()
 
 MPI_IMPL = 'OMPI'
 
