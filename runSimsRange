@@ -21,8 +21,6 @@ def main():
         help="The maximum rate of the high priority messages. Note: The actual rate will depend on the HP request latency")
     parser.add_argument("--clientLPReqRate", type=str, default="1",
         help="The maximum rate of the low priority messages. Note: The actual rate will depend on the HP request latency")
-    parser.add_argument("--clientReqGrpSize", type=str, default="100",
-        help="The size of the request group for which a measurement will be taken")
     parser.add_argument("--coresForHPThreads", type=str, default="1",
         help="The number of cores to reserve for processing high priority messages on each host")
 
@@ -38,7 +36,6 @@ def main():
                'serverNetLoad': args.serverNetLoad,
                'clientHPReqRate': args.clientHPReqRate, 
                'clientLPReqRate': args.clientLPReqRate, 
-               'clientReqGrpSize': args.clientReqGrpSize, 
                'coresForHPThreads': args.coresForHPThreads}
     run_sims_range(args, argsMap)
     

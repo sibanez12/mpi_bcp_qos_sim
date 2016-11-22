@@ -29,7 +29,7 @@ def run_sim(args, numHosts=None):
 
     procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
 
-    if (socket.gethostname() == 'ubuntu'):
+    if (socket.gethostname() == 'ubuntu' or socket.gethostname() == 'sibanez-netfpga'):
 
         try:
             assert(numHosts is not None)
@@ -49,7 +49,6 @@ def run_sim(args, numHosts=None):
                 '--serverNetLoad', str(args['serverNetLoad']),
                 '--clientHPReqRate', str(args['clientHPReqRate']),
                 '--clientLPReqRate', str(args['clientLPReqRate']),
-                '--clientReqGrpSize', str(args['clientReqGrpSize']),
                 '--coresForHPThreads', str(args['coresForHPThreads'])]
         print "command: \n", ' '.join(simArgs)
     else:
@@ -63,7 +62,6 @@ def run_sim(args, numHosts=None):
                 '--serverNetLoad', str(args['serverNetLoad']),
                 '--clientHPReqRate', str(args['clientHPReqRate']),
                 '--clientLPReqRate', str(args['clientLPReqRate']),
-                '--clientReqGrpSize', str(args['clientReqGrpSize']),
                 '--coresForHPThreads', str(args['coresForHPThreads'])]
         print "command: \n", ' '.join(simArgs)
 
@@ -94,7 +92,7 @@ def run_sims_range(args, argsMap):
     """
 
     numHosts = None
-    if (socket.gethostname() == 'ubuntu'):
+    if (socket.gethostname() == 'ubuntu' or socket.gethostname() == 'sibanez-netfpga'):
         while (numHosts is None):
             numHosts_s = raw_input("Enter the number of hosts to simulate: ")
             try:

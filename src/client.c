@@ -27,7 +27,7 @@
  *	2. Waits to ACK back from server
  */
 void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRate,
-		int clientReqGrpSize, int numHosts) {
+		int numHosts) {
 
 	signal(SIGUSR1, client_intHandler);
 
@@ -54,7 +54,6 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	threadState.threadID = threadID;
 	threadState.clientHPReqRate = clientHPReqRate;
 	threadState.clientLPReqRate = clientLPReqRate;
-	threadState.clientReqGrpSize = clientReqGrpSize;
 	threadState.numHosts = numHosts;
 	threadState.seed = 1202107158 * my_rank + threadID * 1999; // different seed for each thread
 	/* Create log for this client process */
@@ -336,7 +335,6 @@ void client_reportFinalStats(clientThreadState *threadState) {
 		// FILE *histData = threadState->clientHistData;
 		FILE *clientLog = threadState->clientLog;
 		int threadID = threadState->threadID;
-		int clientReqGrpSize = threadState->clientReqGrpSize;
 		int clientID = threadState->clientID;
 
 		// TODO:
@@ -351,7 +349,7 @@ void client_reportFinalStats(clientThreadState *threadState) {
 
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
-		long double totalNumHPReqs = threadState->numHPReqSamples*clientReqGrpSize;
+		long double totalNumHPReqs = threadState->numHPReqSamples;
 		struct timespec diff;
 		int r = timespec_subtract(&diff, &(threadState->final_time), &(threadState->init_start_time));
 		if (r) printf("ERROR: final_time - start time < 0\n");

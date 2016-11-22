@@ -46,7 +46,6 @@ typedef struct clientThreadState_s {
 	int threadID;
 	int clientHPReqRate;
 	int clientLPReqRate;
-	int clientReqGrpSize;
 	int numHosts;
 	unsigned long int seed;
 	FILE *clientLog;
@@ -64,7 +63,7 @@ typedef struct clientThreadState_s {
 } clientThreadState;
 
 void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRate,
-		int clientReqGrpSize, int numHosts);
+		int numHosts);
 
 void client_runThread(clientThreadState *threadState);
 
