@@ -26,6 +26,7 @@ def kill_sim(process):
     print "killing process"
     process.close()
 
+# NOTE: This is the version of kill_sim used for the Popen version of the code
 # def kill_sim(process):
 #     sleep(SIM_RUN_TIME)
 #     if (process.poll() is None):
@@ -34,8 +35,7 @@ def kill_sim(process):
 #     sleep(SIM_LOGGING_TIME) # wait for the sim to finish up and write results
 #     print "killing process"
 #     process.terminate()
-#
-#     # process.wait()
+
 
 def run_sim(args, numHosts=None):
     procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
@@ -113,6 +113,8 @@ def run_sim(args, numHosts=None):
         # print "[info] No prompt seen, assuming it's ok and proceeding."
         pass
 
+    # NOTE: To switch back to the Popen version of the code, uncomment this line
+    # and the sys.stdout.write lines a few lines below, and comment the block above.
     # p = subprocess.Popen(simArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     print "[info] Launching sim at pid: " + str(p.pid)
     killer_thread = Thread(target = kill_sim, args = (p, ))
