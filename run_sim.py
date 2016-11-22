@@ -1,4 +1,4 @@
-#!/usr/bin/env pytho
+#!/usr/bin/env python
 
 import sys, subprocess, socket, os
 import shutil, re, shlex, getpass
