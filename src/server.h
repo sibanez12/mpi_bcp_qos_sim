@@ -18,8 +18,9 @@ typedef struct serverContinuation_s {
 
 typedef struct serverThreadState_s {
 	int serverThreadsPerHost;
-	int serverProcTime;
+	int serverMemLoad;
 	int serverNetLoad;
+	int serverComputeLoad;
 	int coresForHPThreads;
 	int numHosts;
 	int threadID;
@@ -37,7 +38,7 @@ typedef struct serverThreadState_s {
 } serverThreadState;
 
 void runServer(int serverThreadsPerHost, int clientThreadsPerHost,
-		int serverProcessingTime, int serverNetLoad, int coresForHPThreads, int numHosts);
+		int serverMemLoad, int serverNetLoad, int serverComputeLoad, int coresForHPThreads, int numHosts);
 
 bool server_getPriority(serverThreadState *threadState);
 

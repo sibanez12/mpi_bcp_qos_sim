@@ -56,8 +56,9 @@ def run_sim(args, numHosts=None):
                 [BUILD+'/mpi_bcp_qos_sim',
                 '--clientThreadsPerHost', str(args['clientThreadsPerHost']),
                 '--serverThreadsPerHost', str(args['serverThreadsPerHost']),
-                '--serverProcessingTime', str(args['serverProcessingTime']),
+                '--serverMemLoad', str(args['serverMemLoad']),
                 '--serverNetLoad', str(args['serverNetLoad']),
+                '--serverComputeLoad', str(args['serverComputeLoad']),
                 '--clientHPReqRate', str(args['clientHPReqRate']),
                 '--clientLPReqRate', str(args['clientLPReqRate']),
                 '--coresForHPThreads', str(args['coresForHPThreads'])]
@@ -69,8 +70,9 @@ def run_sim(args, numHosts=None):
                 [BUILD+'/mpi_bcp_qos_sim',
                 '--clientThreadsPerHost', str(args['clientThreadsPerHost']),
                 '--serverThreadsPerHost', str(args['serverThreadsPerHost']),
-                '--serverProcessingTime', str(args['serverProcessingTime']),
+                '--serverMemLoad', str(args['serverMemLoad']),
                 '--serverNetLoad', str(args['serverNetLoad']),
+                '--serverComputeLoad', str(args['serverComputeLoad']),
                 '--clientHPReqRate', str(args['clientHPReqRate']),
                 '--clientLPReqRate', str(args['clientLPReqRate']),
                 '--coresForHPThreads', str(args['coresForHPThreads'])]

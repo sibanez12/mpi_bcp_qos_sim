@@ -125,7 +125,9 @@ void create_mpi_message_type(MPI_Datatype *mpi_message_type);
 
 void create_message(mpiMsg *buf, char *message, int threadID);
 
-void perform_task(bigArray *data, int procTime, unsigned long int *seed);
+void perform_memory_task(bigArray *data, int procTime, unsigned long int *seed);
+
+void perform_compute_task(int computeLoad);
 
 unsigned int readData(bigArray *data, unsigned int index, int bytesToRead);
 

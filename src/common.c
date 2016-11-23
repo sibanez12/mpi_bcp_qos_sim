@@ -238,14 +238,14 @@ void create_message(mpiMsg *buf, char *message, int threadID) {
 	buf->threadID = threadID;
 }
 
-void perform_task(bigArray *data, int procTime, unsigned long int *seed) {
+void perform_memory_task(bigArray *data, int memLoad, unsigned long int *seed) {
 	/*
-	 * Generate procTime cache misses
+	 * Generate cache misses
 	 */
 	unsigned int index;
 	unsigned long int randVal;
 	unsigned int val;
-	for (int i = 0; i < procTime; i++) {
+	for (int i = 0; i < memLoad; i++) {
 		randVal = myRandom(seed);
 		index = (randVal + val) % (data->size);
 		/* Read */
@@ -255,6 +255,35 @@ void perform_task(bigArray *data, int procTime, unsigned long int *seed) {
 		index = (randVal + val) % (data->size);
 		/* Write */
 		writeData(data, index, BYTES_TO_WRITE, seed);
+	}
+}
+
+/*
+ * Run a computation workload for computeLoad*100 us
+ */
+void perform_compute_task(int computeLoad) {
+	long double increment = 100000; // 100 us = 100000 ns
+
+	struct timespec start_time;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+	struct timespec curr_time;
+
+	long double duration; // duration in nanoseconds
+	struct timespec duration_ts;
+	bool limitReached = false;
+
+	double value = 12.2; // random initial floating point value;
+
+	while (!limitReached) {
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &curr_time);
+		bool isNeg = timespec_subtract(&duration_ts, &curr_time, &start_time);
+		duration = timespec_to_double(&duration_ts)*NSEC_PER_SEC;
+	    if (isNeg) printf("ERROR: curr_time - start_time < 0\n");
+	    else if (duration > (double)computeLoad*increment) {
+	    	limitReached = true;
+	    } else {
+	    	value += 1234567.654/value; // floating point computation
+	    }
 	}
 }
 
@@ -344,7 +373,7 @@ void compute_ipg(int rate_packets_per_sec, struct timespec *ipg_t) {
 }
 
 /**
- * Return the time in nanosecords.
+ * Return the time in seconds.
  */
 long double timespec_to_double(struct timespec *time) {
 	return ((long double) time->tv_sec) + ((long double) time->tv_nsec/NSEC_PER_SEC);

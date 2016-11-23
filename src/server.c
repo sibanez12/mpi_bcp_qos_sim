@@ -23,8 +23,8 @@
  * 2. Do required processing
  * 3. send ACK back to server
  */
-void runServer(int serverThreadsPerHost, int clientThreadsPerHost, int serverProcessingTime, int serverNetLoad,
-		int coresForHPThreads, int numHosts) {
+void runServer(int serverThreadsPerHost, int clientThreadsPerHost, int serverMemLoad, int serverNetLoad,
+		int serverComputeLoad, int coresForHPThreads, int numHosts) {
 
 	signal(SIGUSR1, server_intHandler);
 
@@ -46,8 +46,9 @@ void runServer(int serverThreadsPerHost, int clientThreadsPerHost, int serverPro
 	/* Initialize the serverThreadState */
 	serverThreadState threadState;
 	threadState.serverThreadsPerHost = serverThreadsPerHost;
-	threadState.serverProcTime = serverProcessingTime;
+	threadState.serverMemLoad = serverMemLoad;
 	threadState.serverNetLoad = serverNetLoad;
+	threadState.serverComputeLoad = serverComputeLoad;
 	threadState.coresForHPThreads = coresForHPThreads;
 	threadState.numHosts = numHosts;
 	threadState.threadID = threadID;
@@ -89,7 +90,8 @@ bool server_getPriority(serverThreadState *threadState) {
 void server_runThread(serverThreadState *threadState) {
 	int threadID = threadState->threadID;
 	int serverID = threadState->serverID;
-	int serverProcTime = threadState->serverProcTime;
+	int serverMemLoad = threadState->serverMemLoad;
+	int serverComputeLoad = threadState->serverComputeLoad;
 	unsigned long int *seed = &(threadState->seed);
 	bigArray *data = threadState->data;
 	bool isHighPriority = threadState->isHighPriority;
@@ -110,7 +112,8 @@ void server_runThread(serverThreadState *threadState) {
 			threadState->numHPReqMsgs++;
 
 			/* Do some local processing */
-			perform_task(data, serverProcTime, seed);
+			perform_memory_task(data, serverMemLoad, seed);
+			perform_compute_task(serverComputeLoad);
 
 			/* Check whether server-2-server request is required */
 			if (threadState->serverNetLoad == 0) {
@@ -138,7 +141,8 @@ void server_runThread(serverThreadState *threadState) {
 			threadState->numLPReqMsgs++;
 
 			/* Do some local processing */
-			perform_task(data, serverProcTime, seed);
+			perform_memory_task(data, serverMemLoad, seed);
+			perform_compute_task(serverComputeLoad);
 
 			/* Create server-2-server network load if required */
 			if (threadState->serverNetLoad != 0) {
@@ -150,7 +154,8 @@ void server_runThread(serverThreadState *threadState) {
 			/* FIXME: Do we need to update statistics here? */
 
 			/* Do only local processing */
-			perform_task(data, serverProcTime, seed);
+			perform_memory_task(data, serverMemLoad, seed);
+			perform_compute_task(serverComputeLoad);
 
 			/* Send ACK back */
 			create_message(&msgBuf, "HIGH PRIORITY ACK", msgBuf.threadID);
@@ -160,7 +165,8 @@ void server_runThread(serverThreadState *threadState) {
 			/* FIXME: Do we need to update statistics here? */
 
 			/* Do only local processing */
-			perform_task(data, serverProcTime, seed);
+			perform_memory_task(data, serverMemLoad, seed);
+			perform_compute_task(serverComputeLoad);
 
 			/* Send ACK back */
 			create_message(&msgBuf, "LOW PRIORITY ACK", msgBuf.threadID);
