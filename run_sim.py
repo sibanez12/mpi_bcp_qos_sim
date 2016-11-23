@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import sys, subprocess, socket, os
 import shutil, re, shlex, getpass
@@ -6,27 +7,37 @@ from threading import Thread
 from time import sleep
 from StatsParser import StatsParser
 from StatsAnalysis import *
+import pexpect
 
 SIM_RUN_TIME = 30
 OUTPUT_DIR = "./out/"
 BUILD = "./Debug"
 SIM_LOGGING_TIME = 5
+KEY = open('pass.txt', 'r').readline()
 
 MPI_IMPL = 'OMPI'
 
 def kill_sim(process):
     sleep(SIM_RUN_TIME)
-    if (process.poll() is None):
-        print "sending SIGUSR1"
-        process.send_signal(signal.SIGUSR1)
+    if (process.isalive()):
+        print "[info] sending " + str(signal.SIGUSR1) + " to pid: " + str(process.pid)
+        process.kill(signal.SIGUSR1)
     sleep(SIM_LOGGING_TIME) # wait for the sim to finish up and write results
     print "killing process"
-    process.terminate()
+    process.close()
 
-    # process.wait()
+# NOTE: This is the version of kill_sim used for the Popen version of the code
+# def kill_sim(process):
+#     sleep(SIM_RUN_TIME)
+#     if (process.poll() is None):
+#         print "sending " + str(signal.SIGUSR1) + " to pid: " + str(process.pid)
+#         process.send_signal(signal.SIGUSR1)
+#     sleep(SIM_LOGGING_TIME) # wait for the sim to finish up and write results
+#     print "killing process"
+#     process.terminate()
+
 
 def run_sim(args, numHosts=None):
-
     procsPerHost = args['clientThreadsPerHost'] + args['serverThreadsPerHost']
 
     if (socket.gethostname() == 'ubuntu' or socket.gethostname() == 'sibanez-netfpga'):
@@ -63,7 +74,7 @@ def run_sim(args, numHosts=None):
                 '--clientHPReqRate', str(args['clientHPReqRate']),
                 '--clientLPReqRate', str(args['clientLPReqRate']),
                 '--coresForHPThreads', str(args['coresForHPThreads'])]
-        print "command: \n", ' '.join(simArgs)
+        print "[info] command: \n", ' '.join(simArgs)
 
     # Delete current contents of the output directory
     try:
@@ -72,14 +83,46 @@ def run_sim(args, numHosts=None):
         pass
     os.mkdir(OUTPUT_DIR)
 
-    p = subprocess.Popen(simArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    # Want to handle 3 scenarios:
+    #   1. First time connecting, which will ask "Are you sure you want to continue connecting?"
+    #   2. Just asking for password
+    #   3. No password is asked for because you have a key or something.
+    # code from http://linux.byexamples.com/archives/346/python-how-to-access-ssh-with-pexpect/
+    ssh_newkey = "Are you sure you want to continue connecting"
+    p = pexpect.spawn(simArgs[0], simArgs[1:])
+    p.logfile_read = sys.stdout # only log what the child process sends back
+    i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
+    if i == 0:
+        print "\n[info] Saying yes to first time connection."
+        p.sendline("yes")
+        i = p.expect([ssh_newkey, ".*password:", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
+    if i == 1:
+        print "\n[info] Providing user password."
+        p.sendline(KEY)
+        j = p.expect([".*denied.*", pexpect.EOF, pexpect.TIMEOUT], timeout=2)
+        if j == 0:
+            sys.exit("\n[ERROR] Did you fill in your password?")
+        elif j == 3:
+            pass
+    elif i == 2:
+        print "\n[info] Looks like I had the key."
+        pass
+    elif i == 3:
+        # print "[info] No prompt seen, assuming it's ok and proceeding."
+        pass
+
+    # NOTE: To switch back to the Popen version of the code, uncomment this line
+    # and the sys.stdout.write lines a few lines below, and comment the block above.
+    # p = subprocess.Popen(simArgs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    print "[info] Launching sim at pid: " + str(p.pid)
     killer_thread = Thread(target = kill_sim, args = (p, ))
     killer_thread.start()
-    for line in iter(p.stdout.readline, ''):
-        sys.stdout.write(line)
+    # for line in iter(p.stdout.readline, ''):
+    #     sys.stdout.write(line)
     killer_thread.join()
-    p.wait()
-    print "Process finished with returncode: ", p.returncode
+    while(p.isalive()):
+        pass
+    print "Process finished with returncode: ", p.exitstatus
 
     stats = StatsParser(OUTPUT_DIR)
     return stats
@@ -177,11 +220,11 @@ def makeMPI_runCmd(procsPerHost):
 
     return OMPI_RUN_CMD
 
-def runCommand(command, working_directory='.', shell=False):
-    print '---------------------------------------'
-    print "Running command: $ ", command
-    print '---------------------------------------'
-    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=working_directory, shell=shell)
-    for line in iter(p.stdout.readline, ''):
-        sys.stdout.write(line)
-    p.wait()
+# def runCommand(command, working_directory='.', shell=False):
+#     print '---------------------------------------'
+#     print "Running command: $ ", command
+#     print '---------------------------------------'
+#     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=working_directory, shell=shell)
+#     for line in iter(p.stdout.readline, ''):
+#         sys.stdout.write(line)
+#     p.wait()
