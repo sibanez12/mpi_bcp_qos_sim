@@ -131,6 +131,8 @@ void client_checkSendLPReq(clientThreadState *threadState) {
 		/* Send out a low priority request for this thread */
 		MPI_Comm comm = lowPriority_comm;
 		client_sendReq(comm, threadState);
+		// reset the lastLPReqTime
+		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, lastLPReqTime);
 	}
 }
 
