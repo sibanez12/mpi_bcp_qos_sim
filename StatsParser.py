@@ -94,8 +94,7 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
             searchObj = re.search(log_format, log)
             numHits = 0
             while searchObj is not None:
-                numHits += 1
-                self.process_stats(searchObj.groupdict(), logType)
+                numHits += self.process_stats(searchObj.groupdict(), logType)
                 log = log[:searchObj.start()] + log[searchObj.end():]
                 searchObj = re.search(log_format, log)
             if numHits == 0:
@@ -103,6 +102,7 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
 
     """
     Process the stats from one log_format
+    returns 0 if log entry is ignored, else returns 1
     """
     def process_stats(self, statsDict, logType):
 
@@ -111,11 +111,11 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
             # If numSamples == 0 then avg completion time and variance will be nan
             if (float(statsDict['numSamples']) == 0):
                 print >> sys.stderr, "WARNING: numSamples = 0 in log. Ignoring log entry."
-                return
+                return 0
             # If totalTime == 0 then Requests/sec will be inf
             if (float(statsDict['totalTime']) == 0):
                 print >> sys.stderr, "WARNING: totalTime = 0 in log. Ignoring log entry."
-                return
+                return 0
 
         for key, value in statsDict.iteritems():
             try:
@@ -134,3 +134,4 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
                     self.serverStats[key] = [val]
                 else:
                     self.serverStats[key].append(val)
+        return 1

@@ -127,6 +127,10 @@ def run_sim(args, numHosts=None):
     print "Process finished with returncode: ", p.exitstatus
 
     stats = StatsParser(OUTPUT_DIR)
+    # check to make sure that avgCT is in the stats
+    if ('avgCT' not in stats.clientStats.keys()):
+        print >> sys.stderr, "ERROR: avgCT not in final stats"
+        sys.exit(1)
     return stats
 
 
