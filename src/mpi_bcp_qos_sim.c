@@ -29,7 +29,7 @@
 
 /* Start the simulation */
 void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPerHost,
-		int serverProcessingTime, int serverNetLoad, int clientHPReqRate,
+		int serverMemLoad, int serverNetLoad, int serverComputeLoad, int clientHPReqRate,
 		int clientLPReqRate, int coresForHPThreads)
 {
 	int  my_rank;  /* rank of process */
@@ -118,8 +118,8 @@ void runSim(int argc, char **argv, int clientThreadsPerHost, int serverThreadsPe
 		/*
 		 * Service requests
 		 */
-		runServer(serverThreadsPerHost, clientThreadsPerHost, serverProcessingTime,
-				serverNetLoad, coresForHPThreads, numHosts);
+		runServer(serverThreadsPerHost, clientThreadsPerHost, serverMemLoad,
+				serverNetLoad, serverComputeLoad, coresForHPThreads, numHosts);
 	}
 	else {
 		printf("ERROR: process is not a CLIENT, SERVER...\n");
@@ -141,8 +141,9 @@ int main (int argc, char **argv)
 	// Default parameter settings
 	char *clientThreadsPerHost_s = "1";
 	char *serverThreadsPerHost_s = "3";
-	char *serverProcessingTime_s = "10";
+	char *serverMemLoad_s = "10";
 	char *serverNetLoad_s = "1";
+	char *serverComputeLoad_s = "1";
 	char *clientHPReqRate_s = "1"; // number of HP messages outstanding at a time
 	char *clientLPReqRate_s = "10"; // requests/second
 	char *coresForHPThreads_s = "2";
@@ -158,8 +159,9 @@ int main (int argc, char **argv)
                    We distinguish them by their indices. */
 				{"clientThreadsPerHost",      required_argument,   0, 'c'},
 				{"serverThreadsPerHost",      required_argument,   0, 's'},
-				{"serverProcessingTime",      required_argument,   0, 'p'},
+				{"serverMemLoad",             required_argument,   0, 'p'},
 				{"serverNetLoad",             required_argument,   0, 'n'},
+				{"serverComputeLoad",         required_argument,   0, 'm'},
 				{"clientHPReqRate",           required_argument,   0, 'r'},
 				{"clientLPReqRate",           required_argument,   0, 'l'},
 				{"coresForHPThreads",         required_argument,   0, 'h'},
@@ -167,7 +169,7 @@ int main (int argc, char **argv)
 		};
 		/* getopt_long stores the option index here. */
 		int option_index = 0;
-		c = getopt_long (argc, argv, "c:s:p:n:r:l:h:",
+		c = getopt_long (argc, argv, "c:s:p:n:m:r:l:h:",
 				long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -193,10 +195,13 @@ int main (int argc, char **argv)
 			serverThreadsPerHost_s = optarg;
 			break;
 		case 'p':
-			serverProcessingTime_s = optarg;
+			serverMemLoad_s = optarg;
 			break;
 		case 'n':
 			serverNetLoad_s = optarg;
+			break;
+		case 'm':
+			serverComputeLoad_s = optarg;
 			break;
 		case 'r':
 			clientHPReqRate_s = optarg;
@@ -230,8 +235,9 @@ int main (int argc, char **argv)
 	// Convert arguments to integers
 	int clientThreadsPerHost;
 	int serverThreadsPerHost;
-	int serverProcessingTime;
+	int serverMemLoad;
 	int serverNetLoad;
+	int serverComputeLoad;
 	int clientHPReqRate;
 	int clientLPReqRate;
 	int coresForHPThreads;
@@ -240,26 +246,28 @@ int main (int argc, char **argv)
 	int base = 10;
 	clientThreadsPerHost = strtol(clientThreadsPerHost_s, &ptr, base);
 	serverThreadsPerHost = strtol(serverThreadsPerHost_s, &ptr, base);
-	serverProcessingTime = strtol(serverProcessingTime_s, &ptr, base);
+	serverMemLoad = strtol(serverMemLoad_s, &ptr, base);
 	serverNetLoad = strtol(serverNetLoad_s, &ptr, base);
+	serverComputeLoad = strtol(serverComputeLoad_s, &ptr, base);
 	clientHPReqRate = strtol(clientHPReqRate_s, &ptr, base);
 	clientLPReqRate = strtol(clientLPReqRate_s, &ptr, base);
 	coresForHPThreads = strtol(coresForHPThreads_s, &ptr, base);
 
-	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverProcessingTime >= 0 &&
-			serverNetLoad >= 0 && clientHPReqRate >= 0 && clientLPReqRate >= 0 &&
+	assert(clientThreadsPerHost > 0 && serverThreadsPerHost > 0 && serverMemLoad >= 0 &&
+			serverNetLoad >= 0 && serverComputeLoad >= 0 && clientHPReqRate >= 0 && clientLPReqRate >= 0 &&
 			coresForHPThreads >= 0);
 	assert(coresForHPThreads < serverThreadsPerHost);
 
 	DEBUG_PRINT(("clientThreadsPerHost = %d, "
 			"serverThreadsPerHost = %d, "
-			"serverProcessingTime = %d, "
+			"serverMemLoad = %d, "
 			"serverNetLoad = %d, "
+			"serverComputeLoad = %d, "
 			"clientHPReqRate = %d, "
 			"clientLPReqRate = %d, "
 			"coresForHPThreads = %d\n",
-			clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime, serverNetLoad,
-			clientHPReqRate, clientLPReqRate, coresForHPThreads));
+			clientThreadsPerHost, serverThreadsPerHost, serverMemLoad, serverNetLoad,
+			serverComputeLoad, clientHPReqRate, clientLPReqRate, coresForHPThreads));
 
 	/* Make sure the output directory exists */
 	struct stat st = {0};
@@ -267,8 +275,8 @@ int main (int argc, char **argv)
 		mkdir("./out", 0700);
 	}
 
-	runSim(argc, argv, clientThreadsPerHost, serverThreadsPerHost, serverProcessingTime,
-			serverNetLoad, clientHPReqRate, clientLPReqRate, coresForHPThreads);
+	runSim(argc, argv, clientThreadsPerHost, serverThreadsPerHost, serverMemLoad,
+			serverNetLoad, serverComputeLoad, clientHPReqRate, clientLPReqRate, coresForHPThreads);
 
 	pthread_exit(NULL);
 }

@@ -13,10 +13,13 @@ def main():
         help="The number of single threaded client processes to run on each host")
     parser.add_argument("--serverThreadsPerHost", type=str, default="1",
         help="The number of server threads to run on each host")
-    parser.add_argument("--serverProcessingTime", type=str, default="1",
-        help="The number of work units for the server threads to perform after receiving a message")
+    parser.add_argument("--serverMemLoad", type=str, default="1",
+        help="""One unit of memory-load corresponds to a 512 random read followed by a 512 byte random write. 
+        This option specifies how many of these each server should do to process a message""")
     parser.add_argument("--serverNetLoad", type=str, default="1",
         help="The number of the network messages for the server threads to send to a different server after receiving a message")
+    parser.add_argument("--serverComputeLoad", type=str, default="1",
+        help="One unit of compute-load corresponds to 100 us of core processing time done by the servers to process a message")
     parser.add_argument("--clientHPReqRate", type=str, default="1",
         help="The maximum rate of the high priority messages. Note: The actual rate will depend on the HP request latency")
     parser.add_argument("--clientLPReqRate", type=str, default="1",
@@ -32,8 +35,9 @@ def main():
 
     argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost, 
                'serverThreadsPerHost': args.serverThreadsPerHost, 
-               'serverProcessingTime': args.serverProcessingTime, 
+               'serverMemLoad': args.serverMemLoad, 
                'serverNetLoad': args.serverNetLoad,
+               'serverComputeLoad': args.serverComputeLoad,
                'clientHPReqRate': args.clientHPReqRate, 
                'clientLPReqRate': args.clientLPReqRate, 
                'coresForHPThreads': args.coresForHPThreads}
