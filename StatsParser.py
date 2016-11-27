@@ -3,7 +3,6 @@ This class parses the output files of the simulation
 """
 
 import sys, os, re
-import numpy as np
 import csv
 
 class StatsParser:
@@ -11,6 +10,7 @@ class StatsParser:
     This class parses the log files in the output directory
     and accumulates the statistics for the simulation.
     """
+    
     def __init__(self, directory):
         self.rootdir = directory
         self.logFiles = []
