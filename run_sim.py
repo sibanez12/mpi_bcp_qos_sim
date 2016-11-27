@@ -174,7 +174,12 @@ def run_sims_range(args, argsMap):
 
     print "All Simulations completed!"
     finalAggStats = aggregate_finalStats(finalStats)
-    print "Final Aggregated Stats = \n", finalAggStats
+    for aggStats in finalAggStats:
+        for key, value in aggStats.items():
+            # Don't print out the huge CDF data at the end
+            if key not in (['CDFData']):
+                print "[info] Final Stats: " + key + ": " + str(value)
+    # print "Final Aggregated Stats = \n", finalAggStats
     plotResults(finalAggStats, paramWithRange, rangeArgs)
 
 """
