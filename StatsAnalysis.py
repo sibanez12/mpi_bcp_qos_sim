@@ -175,7 +175,7 @@ For example:
     'avgRunTime': 2.4592084999999999
 }]
 """
-def plotResults(finalAggStats, paramWithRange, rangeArgs, cdfs=False):
+def plotResults(finalAggStats, paramWithRange, rangeArgs, no_cdfs=False):
     print "paramWithRange = ", paramWithRange
     xdata = rangeArgs[paramWithRange]
     print "xdata = ", xdata
@@ -227,7 +227,7 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs, cdfs=False):
     plt.close()
 
     # Plot the CDF for this run
-    if (cdfs):
+    if not no_cdfs:
         plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9992)
 
 def plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9991):
