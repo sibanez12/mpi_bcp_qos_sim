@@ -3,18 +3,20 @@ This class parses the output files of the simulation
 """
 
 import sys, os, re
+import csv
 
 class StatsParser:
     """
     This class parses the log files in the output directory
     and accumulates the statistics for the simulation.
     """
-
+    
     def __init__(self, directory):
         self.rootdir = directory
         self.logFiles = []
         self.clientStats = {}
         self.serverStats = {}
+        self.clientCDFData = {}
 
         self.CLIENT = 0
         self.SERVER = 1
@@ -77,9 +79,26 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
                     self.parse_stats_log(fname, self.SERVER)
 
     def parse_histogram_log(self, filename):
-        # TODO: Placeholder for the unique processing that will be done to plot
-        # CDFs in the future.
-        return
+        # To make indexing more readable
+        VALUE = 0
+        PERCENTILE = 1
+        TOTALCOUNT = 2
+        percentiles = []
+        latencies = []
+        with open(filename, 'rb') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            for row in reader:
+                # Skip the first row
+                if row[VALUE] == "Value":
+                    continue
+
+                latencies.append(float(row[VALUE]))
+                percentiles.append(float(row[PERCENTILE]))
+
+        clientNum = re.search(r'\d+', filename).group(0)
+        # Save all of this simulations client's stats in a dictionary with
+        # the client number as the key and the value being a tuple of lists
+        self.clientCDFData[clientNum] = (latencies, percentiles)
 
     def parse_stats_log(self, filename, logType):
         if logType == self.CLIENT:

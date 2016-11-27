@@ -1,12 +1,73 @@
 
 import sys
 import numpy as np
+from numpy import ma
 import csv
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib import scale as mscale
+from matplotlib import transforms as mtransforms
+from matplotlib.ticker import FixedFormatter, FixedLocator
 from matplotlib.backends.backend_pdf import PdfPages
 import datetime
+
+# Class used to get a nice scale zoomed in on 1 for the y-axis. Code from
+# http://stackoverflow.com/questions/31147893/logarithmic-plot-of-a-cumulative-distribution-function-in-matplotlib
+class CloseToOne(mscale.ScaleBase):
+    name = 'close_to_one'
+
+    def __init__(self, axis, **kwargs):
+        mscale.ScaleBase.__init__(self)
+        self.nines = kwargs.get('nines', 5)
+
+    def get_transform(self):
+        return self.Transform(self.nines)
+
+    def set_default_locators_and_formatters(self, axis):
+        axis.set_major_locator(FixedLocator(
+                np.array([1-10**(-k) for k in range(1+self.nines)])))
+        axis.set_major_formatter(FixedFormatter(
+                [str(1-10**(-k)) for k in range(1+self.nines)]))
+
+
+    def limit_range_for_scale(self, vmin, vmax, minpos):
+        return vmin, min(1 - 10**(-self.nines), vmax)
+
+    class Transform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self, nines):
+            mtransforms.Transform.__init__(self)
+            self.nines = nines
+
+        def transform_non_affine(self, a):
+            masked = ma.masked_where(a > 1-10**(-1-self.nines), a)
+            if masked.mask.any():
+                return -ma.log10(1-a)
+            else:
+                return -np.log10(1-a)
+
+        def inverted(self):
+            return CloseToOne.InvertedTransform(self.nines)
+
+    class InvertedTransform(mtransforms.Transform):
+        input_dims = 1
+        output_dims = 1
+        is_separable = True
+
+        def __init__(self, nines):
+            mtransforms.Transform.__init__(self)
+            self.nines = nines
+
+        def transform_non_affine(self, a):
+            return 1. - 10**(-a)
+
+        def inverted(self):
+            return CloseToOne.Transform(self.nines)
+
 
 """
 inputs:
@@ -62,8 +123,10 @@ def aggregateStats(stats):
     aggStats['ninefiveCT'] = max(stats.clientStats['ninefiveCT'])
     aggStats['ninenineCT'] = max(stats.clientStats['ninenineCT'])
 
-    return aggStats
+    # Add on the CDF data from this simulation
+    aggStats['CDFData'] = stats.clientCDFData
 
+    return aggStats
 
 def computeAvgCT(avgCT_vec, numSamples_vec):
     try:
@@ -112,7 +175,7 @@ For example:
     'avgRunTime': 2.4592084999999999
 }]
 """
-def plotResults(finalAggStats, paramWithRange, rangeArgs):
+def plotResults(finalAggStats, paramWithRange, rangeArgs, no_cdfs=False):
     print "paramWithRange = ", paramWithRange
     xdata = rangeArgs[paramWithRange]
     print "xdata = ", xdata
@@ -161,6 +224,46 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs):
         "Avg Num Requests/Sec Completed (1000's)", 'Throughput vs. ' + paramWithRange,
         './plots/Throughput_vs_' + paramWithRange, 1e-3)
 
+    plt.close()
+
+    # Plot the CDF for this run
+    if not no_cdfs:
+        plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9992)
+
+def plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9991):
+    mscale.register_scale(CloseToOne)
+    for i, aggStats in enumerate(finalAggStats):
+        plt.axes([.15, .27, .75, .65])
+        data = aggStats['CDFData']
+        for clientNum, (latencies, percentiles) in data.iteritems():
+            # convert to milliseconds by default
+            x_data = [latency * scaleFactor for latency in latencies]
+            max_index = next(x[0] for x in enumerate(percentiles) if x[1] >= max_percentile)
+            plt.plot(x_data[:max_index], percentiles[:max_index], linestyle='-')
+            # Materialize single plot for each similation
+            plt.xlabel("Latency (milliseconds)")
+            plt.xscale('log')
+            plt.yscale('close_to_one', nines=3)
+            plt.ylabel("Cumulative Probability")
+            plt.title("CDF")
+            plt.grid(True)
+
+        filename = "./plots/ClientCDF_with_" + paramWithRange + "_" + str(rangeArgs[paramWithRange][i])
+
+        text = makePlotDesc(rangeArgs)
+        plt.figtext(.06, .06, text, fontsize='x-small')
+
+        date = str(datetime.datetime.now())
+        date = '_' + date[:date.find('.')].replace(' ', '_')
+        filename += date
+        plot_filename = filename + '.pdf'
+        pp = PdfPages(plot_filename)
+        pp.savefig()
+        pp.close()
+        plt.close()
+        print "[info] Saving Client CDF as: " + plot_filename
+
+
 def makePlot(finalAggStats, paramWithRange, rangeArgs, measuredParam, ylabel, title, filename, scaleFactor=1):
     xdata = rangeArgs[paramWithRange]
     ydata = [aggStats[measuredParam]*scaleFactor for aggStats in finalAggStats]
@@ -183,7 +286,7 @@ def makePlot(finalAggStats, paramWithRange, rangeArgs, measuredParam, ylabel, ti
     pp = PdfPages(plot_filename)
     pp.savefig()
     pp.close()
-    print "Saved plot: ", plot_filename
+    print "[info] Saved plot: ", plot_filename
 
     data_filename = filename + '.csv'
     # save the data in a .csv file
@@ -208,7 +311,7 @@ def makePlotDesc(rangeArgs):
     return text
 
 def dumpData(xdata, ydata, filename):
-    print "writing data file: ", filename
+    print "[info] writing data file: ", filename
     with open(filename, "w") as f:
         for (x,y) in zip(xdata, ydata):
             f.write(str(x) + ',' + str(y) + '\n')

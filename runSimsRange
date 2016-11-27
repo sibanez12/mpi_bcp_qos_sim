@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--serverThreadsPerHost", type=str, default="1",
         help="The number of server threads to run on each host")
     parser.add_argument("--serverMemLoad", type=str, default="1",
-        help="""One unit of memory-load corresponds to a 512 random read followed by a 512 byte random write. 
+        help="""One unit of memory-load corresponds to a 512 random read followed by a 512 byte random write.
         This option specifies how many of these each server should do to process a message""")
     parser.add_argument("--serverNetLoad", type=str, default="1",
         help="The number of the network messages for the server threads to send to a different server after receiving a message")
@@ -26,6 +26,7 @@ def main():
         help="The maximum rate of the low priority messages. Note: The actual rate will depend on the HP request latency")
     parser.add_argument("--coresForHPThreads", type=str, default="1",
         help="The number of cores to reserve for processing high priority messages on each host")
+    parser.add_argument("--no-cdfs", default=False, action="store_true" , help="Save client CDFs")
 
     try:
         args = parser.parse_args()
@@ -33,19 +34,19 @@ def main():
         print >> sys.stderr, "ERROR: failed to parse command line options"
         sys.exit(2)
 
-    argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost, 
-               'serverThreadsPerHost': args.serverThreadsPerHost, 
-               'serverMemLoad': args.serverMemLoad, 
+    argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost,
+               'serverThreadsPerHost': args.serverThreadsPerHost,
+               'serverMemLoad': args.serverMemLoad,
                'serverNetLoad': args.serverNetLoad,
                'serverComputeLoad': args.serverComputeLoad,
-               'clientHPReqRate': args.clientHPReqRate, 
-               'clientLPReqRate': args.clientLPReqRate, 
-               'coresForHPThreads': args.coresForHPThreads}
+               'clientHPReqRate': args.clientHPReqRate,
+               'clientLPReqRate': args.clientLPReqRate,
+               'coresForHPThreads': args.coresForHPThreads,
+               'no_cdfs': args.no_cdfs}
     run_sims_range(args, argsMap)
-    
+
 
 
 
 if __name__ == "__main__":
     main()
-

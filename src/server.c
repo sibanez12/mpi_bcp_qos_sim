@@ -215,8 +215,7 @@ void server_runThread(serverThreadState *threadState) {
 
 void server_sendWrapper(mpiMsg *msgBuf, int count, MPI_Datatype mpi_logRecord_type,
 		int source, int tag, MPI_Comm comm) {
-
-	MPI_Send(msgBuf, 1, mpi_logRecord_type, source, tag, comm);
+		MPI_Send(msgBuf, 1, mpi_logRecord_type, source, tag, comm);
 }
 
 void server_cleanup(serverThreadState *threadState) {

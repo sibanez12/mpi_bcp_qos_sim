@@ -60,9 +60,9 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	char filename[100];
 	sprintf(filename, "./out/Client-%d.log", clientID); // different log for each client process
 	threadState.clientLog = initLog(filename, rankMap);
-	// char histfile[100];
-	// sprintf(histfile, "./out/Client-%d.hist", clientID); // different Hist Data for each client process
-	// threadState.clientHistData = initHistData(histfile, rankMap);
+	char histfile[100];
+	sprintf(histfile, "./out/Client-%d.hist", clientID); // different Hist Data for each client process
+	threadState.clientHistData = initHistData(histfile, rankMap);
 	threadState.finishedLogging = false;
 	struct timespec curr_time;
 	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(curr_time));
@@ -334,20 +334,20 @@ void client_intHandler(int sig_num) {
 void client_reportFinalStats(clientThreadState *threadState) {
 	if (threadState->finishedLogging == false) {
 
-		// FILE *histData = threadState->clientHistData;
+		FILE *histData = threadState->clientHistData;
 		FILE *clientLog = threadState->clientLog;
 		int threadID = threadState->threadID;
 		int clientID = threadState->clientID;
 
 		// TODO:
 		// Print out the values of the histogram to separate file to create CDF.
-		// hdr_percentiles_print(
-		// 	threadState->histogram,
-		// 	histData,			// File to write to
-		// 	10,					 	// Granularity of printed values
-		// 	1.0,					// Multiplier for results
-		// 	CSV 					// Format CLASSIC/CSV supported.
-		// );
+		hdr_percentiles_print(
+			threadState->histogram,
+			histData,			// File to write to
+			10,					 	// Granularity of printed values
+			1.0,					// Multiplier for results
+			CSV 					// Format CLASSIC/CSV supported.
+		);
 
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
@@ -389,7 +389,7 @@ void client_reportFinalStats(clientThreadState *threadState) {
 				totalNumHPReqs, totalNumHPReqs/totalTime);
 
 		fclose(clientLog);
-		// fclose(histData);
+		fclose(histData);
 		printf("CLIENT %d -- THREAD %d ==> DONE reporting Stats\n", clientID, threadID);
 		threadState->finishedLogging = true;
 	}
