@@ -180,7 +180,7 @@ def run_sims_range(args, argsMap):
             if key not in (['CDFData']):
                 print "[info] Final Stats: " + key + ": " + str(value)
     # print "Final Aggregated Stats = \n", finalAggStats
-    plotResults(finalAggStats, paramWithRange, rangeArgs)
+    plotResults(finalAggStats, paramWithRange, rangeArgs, argsMap['cdfs'])
 
 """
 val is the input command line parameter.

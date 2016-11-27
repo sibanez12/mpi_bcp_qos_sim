@@ -175,7 +175,7 @@ For example:
     'avgRunTime': 2.4592084999999999
 }]
 """
-def plotResults(finalAggStats, paramWithRange, rangeArgs):
+def plotResults(finalAggStats, paramWithRange, rangeArgs, cdfs=False):
     print "paramWithRange = ", paramWithRange
     xdata = rangeArgs[paramWithRange]
     print "xdata = ", xdata
@@ -227,7 +227,8 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs):
     plt.close()
 
     # Plot the CDF for this run
-    plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9992)
+    if (cdfs):
+        plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9992)
 
 def plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_percentile=0.9991):
     mscale.register_scale(CloseToOne)
@@ -250,7 +251,7 @@ def plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_perc
         filename = "./plots/ClientCDF_with_" + paramWithRange + "_" + str(rangeArgs[paramWithRange][i])
 
         text = makePlotDesc(rangeArgs)
-        plt.figtext(.06, .06, text, fontsize='xx-small')
+        plt.figtext(.06, .06, text, fontsize='x-small')
 
         date = str(datetime.datetime.now())
         date = '_' + date[:date.find('.')].replace(' ', '_')

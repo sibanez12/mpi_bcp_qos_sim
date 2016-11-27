@@ -26,6 +26,7 @@ def main():
         help="The maximum rate of the low priority messages. Note: The actual rate will depend on the HP request latency")
     parser.add_argument("--coresForHPThreads", type=str, default="1",
         help="The number of cores to reserve for processing high priority messages on each host")
+    parser.add_argument("--cdfs", default=False, action="store_true" , help="Save client CDFs")
 
     try:
         args = parser.parse_args()
@@ -33,19 +34,19 @@ def main():
         print >> sys.stderr, "ERROR: failed to parse command line options"
         sys.exit(2)
 
-    argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost, 
-               'serverThreadsPerHost': args.serverThreadsPerHost, 
-               'serverMemLoad': args.serverMemLoad, 
+    argsMap = {'clientThreadsPerHost': args.clientThreadsPerHost,
+               'serverThreadsPerHost': args.serverThreadsPerHost,
+               'serverMemLoad': args.serverMemLoad,
                'serverNetLoad': args.serverNetLoad,
                'serverComputeLoad': args.serverComputeLoad,
-               'clientHPReqRate': args.clientHPReqRate, 
-               'clientLPReqRate': args.clientLPReqRate, 
-               'coresForHPThreads': args.coresForHPThreads}
+               'clientHPReqRate': args.clientHPReqRate,
+               'clientLPReqRate': args.clientLPReqRate,
+               'coresForHPThreads': args.coresForHPThreads,
+               'cdfs': args.cdfs}
     run_sims_range(args, argsMap)
-    
+
 
 
 
 if __name__ == "__main__":
     main()
-
