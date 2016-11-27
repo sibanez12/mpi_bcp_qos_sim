@@ -247,7 +247,7 @@ def plotCDF(finalAggStats, paramWithRange, rangeArgs, scaleFactor=1e-6, max_perc
             plt.title("CDF")
             plt.grid(True)
 
-        filename = "./plots/ClientCDF_over_" + paramWithRange + "_" + str(rangeArgs[paramWithRange][i])
+        filename = "./plots/ClientCDF_with_" + paramWithRange + "_" + str(rangeArgs[paramWithRange][i])
 
         text = makePlotDesc(rangeArgs)
         plt.figtext(.06, .06, text, fontsize='xx-small')
