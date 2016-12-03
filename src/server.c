@@ -100,7 +100,7 @@ void server_runThread(serverThreadState *threadState) {
 
 	MPI_Status status;
 	mpiMsg msgBuf;
-	server_writeLog = false;
+	server_writeLog = true;
 	while(1) {
 		server_receiveWrapper(&msgBuf, 1, MPI_ANY_SOURCE, MPI_ANY_TAG,
 				comm, &status, threadState);
@@ -244,9 +244,9 @@ void server_receiveWrapper(mpiMsg *msgBuf, int count, int source,
 	int flag = false; // used to be a bool, but MPI_Test wants an int ptr
 	while (flag == false) {
 		MPI_Test(&req, &flag, status);
-		if (server_writeLog == true) {
+		/*if (server_writeLog == true) {
 			writeServerLog(threadState);
-		}
+		}*/
 	}
 
 }

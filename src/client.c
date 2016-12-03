@@ -104,6 +104,7 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	for (int dest = 0; dest < p; dest++) {
 		if (rankMap[dest].isServer == true) {
 			MPI_Send(&msgBuf, 1, mpi_message_type, dest, tag, highPriority_comm);
+			MPI_Send(&msgBuf, 1, mpi_message_type, dest, tag, lowPriority_comm);
 		}
 	}
 }

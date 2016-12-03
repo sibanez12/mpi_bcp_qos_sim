@@ -126,6 +126,11 @@ def aggregateStats(stats):
     # Add on the CDF data from this simulation
     aggStats['CDFData'] = stats.clientCDFData
 
+    # Add the server stats
+    aggStats['serverNumLPReqs'] = sum(stats.serverStats["numLPReqMsgs"])
+    aggStats['serverNumHPReqs'] = sum(stats.serverStats["numHPReqMsgs"])
+    aggStats['avgServerLPReqsSec'] = aggStats['serverNumLPReqs'] / float(avgRunTime)
+
     return aggStats
 
 def computeAvgCT(avgCT_vec, numSamples_vec):
@@ -223,6 +228,13 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs, no_cdfs=False):
     makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgReqPerSec',
         "Avg Num Requests/Sec Completed (1000's)", 'Throughput vs. ' + paramWithRange,
         './plots/Throughput_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
+    # plot the average number of server LP requests/sec completed
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgServerLPReqsSec',
+        "Avg Num LP Requests/Sec Completed (1000's)", 'LP Throughput vs. ' + paramWithRange,
+        './plots/LPThroughput_vs_' + paramWithRange, 1e-3)
 
     plt.close()
 
