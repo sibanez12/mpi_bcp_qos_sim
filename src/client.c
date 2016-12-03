@@ -72,12 +72,14 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	threadState.lastHPReqTime = curr_time;
 	threadState.avgHPReqCTsum = 0;
 	threadState.numHPReqSamples = 0;
+	threadState.numLPReqSamples = 0;
 	threadState.targetServerID = chooseServerID(&threadState);
 	threadState.init_start_time = curr_time;
 	threadState.final_time.tv_sec = 0;
 	threadState.final_time.tv_nsec = 0;
 	threadState.warmupCount = 0;
 
+	client_logChosenServers(&threadState);
 	// Initialise the histogram
 
 	hdr_init(
@@ -131,6 +133,7 @@ void client_checkSendLPReq(clientThreadState *threadState) {
 		/* Send out a low priority request for this thread */
 		MPI_Comm comm = lowPriority_comm;
 		client_sendReq(comm, threadState);
+		threadState->numLPReqSamples += 1;
 		// reset the lastLPReqTime
 		clock_gettime(CLOCK_PROCESS_CPUTIME_ID, lastLPReqTime);
 	}
@@ -352,6 +355,9 @@ void client_reportFinalStats(clientThreadState *threadState) {
 		/* This is the last response we will see for this channel so log the stats */
 		long double avgHPReqCT = threadState->avgHPReqCTsum/threadState->numHPReqSamples;
 		long double totalNumHPReqs = threadState->numHPReqSamples;
+		long double totalNumLPReqs = threadState->numLPReqSamples;
+		long double totalNumReqs = threadState->numHPReqSamples + threadState->numLPReqSamples;
+
 		struct timespec diff;
 		int r = timespec_subtract(&diff, &(threadState->final_time), &(threadState->init_start_time));
 		if (r) printf("ERROR: final_time - start time < 0\n");
@@ -375,6 +381,8 @@ void client_reportFinalStats(clientThreadState *threadState) {
 				"Number of High Priority Request Samples = %Lf\n"
 				"-----------------------------\n"
 				"Total Time = %Lf\n"
+				"Total Num of HP requests = %Lf\n"
+				"Total Num of LP requests = %Lf\n"
 				"Total Num Requests = %Lf\n"
 				"Requests/sec = %Lf\n"
 				"#####################################\n",
@@ -385,8 +393,8 @@ void client_reportFinalStats(clientThreadState *threadState) {
 				hdr_stddev(threadState->histogram),
 				hdr_value_at_percentile(threadState->histogram, 95),
 				hdr_value_at_percentile(threadState->histogram, 99),
-				threadState->numHPReqSamples, totalTime,
-				totalNumHPReqs, totalNumHPReqs/totalTime);
+				threadState->numHPReqSamples, totalTime, totalNumHPReqs, totalNumLPReqs,
+				totalNumReqs, totalNumReqs/totalTime);
 
 		fclose(clientLog);
 		fclose(histData);

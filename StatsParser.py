@@ -43,6 +43,8 @@ High Priority Request Completion Stats:
 Number of High Priority Request Samples = (?P<numSamples>[-\d\.]*)
 -----------------------------
 Total Time = (?P<totalTime>[-\d\.]*)
+Total Num of HP requests = (?P<totalNumHPReqs>[-\d\.]*)
+Total Num of LP requests = (?P<totalNumLPReqs>[-\d\.]*)
 Total Num Requests = (?P<totalNumReqs>[-\d\.]*)
 Requests/sec = (?P<reqsPerSec>[-\d\.infa]*)
 #####################################"""

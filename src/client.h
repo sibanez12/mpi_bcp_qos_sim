@@ -56,6 +56,7 @@ typedef struct clientThreadState_s {
 	struct timespec lastHPReqTime;
 	long double avgHPReqCTsum; // counts seconds
 	long double numHPReqSamples;
+	long double numLPReqSamples;
 	struct timespec init_start_time;
 	struct timespec final_time;
 	int targetServerID;
