@@ -20,7 +20,7 @@
 #endif
 
 #define BUFSIZE 1000
-#define BIG_ARRAY_SIZE 20*8388608
+#define BIG_ARRAY_SIZE 20*16777216
 #define BYTES_TO_READ 512
 #define BYTES_TO_WRITE 512
 
