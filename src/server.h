@@ -8,12 +8,16 @@
 #ifndef SERVER_H_
 #define SERVER_H_
 
+#include <time.h>
+#include "hdr_histogram.h"
+
 bool volatile server_writeLog;
 
 typedef struct serverContinuation_s {
 	int replyCount;
 	int numRepliesNeeded;
 	int originClientRank;
+	struct timespec start_time;
 } serverContinuation;
 
 typedef struct serverThreadState_s {
@@ -26,6 +30,7 @@ typedef struct serverThreadState_s {
 	int threadID;
 	int serverID;
 	bigArray *data;
+	FILE *serverHistData;
 	FILE *logFile;
 	bool logFile_isOpen;
 	unsigned long long numHPReqMsgs;
@@ -35,6 +40,7 @@ typedef struct serverThreadState_s {
 	serverContinuation *continuations;
 	int maxContinuations;
 	bitVector *continuationVector;
+	struct hdr_histogram* histogram;
 } serverThreadState;
 
 void runServer(int serverThreadsPerHost, int clientThreadsPerHost,

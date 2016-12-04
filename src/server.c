@@ -67,6 +67,17 @@ void runServer(int serverThreadsPerHost, int clientThreadsPerHost, int serverMem
 	threadState.continuations = malloc(5000 * sizeof(serverContinuation));
 	threadState.maxContinuations = 5000;
 	threadState.continuationVector = createBitVector(5000);
+	char histfile[100];
+        sprintf(histfile, "./out/Server-%d.hist", serverID); // different Hist Data for each server process
+        threadState.serverHistData = initHistData(histfile, rankMap);
+
+        hdr_init(
+                        1,                                                                              // Minimum value = 1 ns
+                        INT64_C(10000000000),   // Maximum value = 10 s
+                        2,                                                                              // Number of significant figures after decimal
+                        &(threadState.histogram) // Pointer to initialise
+        );
+        DEBUG_PRINT(("Initializing Histogram for client %d (%p) at %p\n", serverID, (void*)&threadState, (void*) &(threadState.histogram)));
 
 	/* TODO: Bind threads to cores */
 	DEBUG_PRINT(("SERVER %d - thread %d - rank %d - isHighPriority %d --> Initializing\n",
@@ -131,6 +142,8 @@ void server_runThread(serverThreadState *threadState) {
 				serverCreateNetworkRequest(threadState, comm, tag);
 				clearBit(threadState->continuationVector, tag);
 				/* Initialize the continuation for this request */
+			        clock_gettime(CLOCK_PROCESS_CPUTIME_ID,
+						&threadState->continuations[tag].start_time);
 				threadState->continuations[tag].replyCount = 0;
 				threadState->continuations[tag].numRepliesNeeded = threadState->serverNetLoad;
 				threadState->continuations[tag].originClientRank = status.MPI_SOURCE;
@@ -175,6 +188,19 @@ void server_runThread(serverThreadState *threadState) {
 		} else if (strcmp(msgBuf.message, "HIGH PRIORITY ACK") == 0){
 			/* Identify the continuation to which this ACK belongs */
 			serverContinuation *current_continuation = &threadState->continuations[status.MPI_TAG];
+
+			/* Calculate the latency for the s2s message */
+			struct timespec curr_time, latency;
+		        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &curr_time);
+
+			int r = timespec_subtract(&latency, &curr_time, &(current_continuation->start_time));
+			if (r) printf("ERROR: current_time - last_time\n");
+
+			long double latency_d = timespec_to_double(&latency);
+			hdr_record_value(
+				threadState->histogram,
+				(int64_t)(latency_d*NSEC_PER_SEC)
+			);
 
 			/* Check whether this is the final message needed for this continuation */
 			current_continuation->replyCount++;
@@ -332,9 +358,25 @@ void writeServerLog(serverThreadState *threadState) {
 				"--------------------------\n"
 				"Num High Priority REQUEST msgs = %llu\n"
 				"Num Low Priority REQUEST msgs = %llu\n"
+				"---------------------------------\n"
+				"High Priority S2S Requests Stats:\n"
+			        "  Minimum Time (ns) = %ld\n"
+                                "  Maximum Time (ns) = %ld\n"
+                                "  Mean Time (ns) = %f\n"
+                                "  Std Dev Time (ns) = %f\n"
+                                "  95-percentile Time (ns) = %ld\n"
+                                "  99-percentile Time (ns) = %ld\n"
 				"###########################\n",
-				serverID, threadID, threadState->numHPReqMsgs, threadState->numLPReqMsgs);
+				serverID, threadID, threadState->numHPReqMsgs,
+                                threadState->numLPReqMsgs,
+                                hdr_min(threadState->histogram),
+                                hdr_max(threadState->histogram),
+                                hdr_mean(threadState->histogram),
+                                hdr_stddev(threadState->histogram),
+                                hdr_value_at_percentile(threadState->histogram, 95),
+                                hdr_value_at_percentile(threadState->histogram, 99));
 		fclose(threadState->logFile);
+                fclose(threadState->serverHistData);
 		threadState->logFile_isOpen = false;
 		printf("SERVER %d -- THREAD %d ==> DONE reporting Stats\n", serverID, threadID);
 	}

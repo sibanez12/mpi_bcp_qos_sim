@@ -130,6 +130,12 @@ def aggregateStats(stats):
     aggStats['serverNumLPReqs'] = sum(stats.serverStats["numLPReqMsgs"])
     aggStats['serverNumHPReqs'] = sum(stats.serverStats["numHPReqMsgs"])
     aggStats['avgServerLPReqsSec'] = aggStats['serverNumLPReqs'] / float(avgRunTime)
+    aggStats['serverNinefiveCT'] = max(stats.serverStats['ninefiveCT'])
+    aggStats['serverNinenineCT'] = max(stats.serverStats['ninenineCT'])
+    aggStats['serverMinCT'] = min(stats.serverStats['minCT'])
+    aggStats['serverMaxCT'] = max(stats.serverStats['maxCT'])
+    aggStats['serverMeanCT'] = np.mean(stats.serverStats['meanCT'])
+    aggStats['serverStddevCT'] = np.mean(stats.serverStats['stddevCT'])
 
     return aggStats
 
@@ -235,6 +241,15 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs, no_cdfs=False):
     makePlot(finalAggStats, paramWithRange, rangeArgs, 'avgServerLPReqsSec',
         "Avg Num LP Requests/Sec Completed (1000's)", 'LP Throughput vs. ' + paramWithRange,
         './plots/LPThroughput_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
+
+    # Plot 99% latency
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'serverNinenineCT',
+        "Server 99-Percentile Completion Time ($\mu$s)", 'Server 99-Percentile Completion Time vs. ' + paramWithRange,
+        './plots/Server_99_Completion_Time_vs_' + paramWithRange, 1e-3)
+
+    plt.cla()
 
     plt.close()
 

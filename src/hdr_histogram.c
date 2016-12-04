@@ -482,6 +482,9 @@ int64_t hdr_add_while_correcting_for_coordinated_omission(
 
 int64_t hdr_max(const struct hdr_histogram* h)
 {
+    if (h->total_count == 0)
+        return 0;
+
     if (0 == h->max_value)
     {
         return 0;
@@ -492,6 +495,9 @@ int64_t hdr_max(const struct hdr_histogram* h)
 
 int64_t hdr_min(const struct hdr_histogram* h)
 {
+    if (h->total_count == 0)
+        return 0;
+
     if (0 < hdr_count_at_index(h, 0))
     {
         return 0;
@@ -504,6 +510,9 @@ int64_t hdr_value_at_percentile(const struct hdr_histogram* h, double percentile
 {
     struct hdr_iter iter;
     hdr_iter_init(&iter, h);
+
+    if (h->total_count == 0)
+        return 0;
 
     double requested_percentile = percentile < 100.0 ? percentile : 100.0;
     int64_t count_at_percentile =
@@ -530,6 +539,9 @@ double hdr_mean(const struct hdr_histogram* h)
     struct hdr_iter iter;
     int64_t total = 0;
 
+    if (h->total_count == 0)
+        return 0.0;
+
     hdr_iter_init(&iter, h);
 
     while (hdr_iter_next(&iter))
@@ -547,6 +559,9 @@ double hdr_stddev(const struct hdr_histogram* h)
 {
     double mean = hdr_mean(h);
     double geometric_dev_total = 0.0;
+
+    if (h->total_count == 0)
+        return 0;
 
     struct hdr_iter iter;
     hdr_iter_init(&iter, h);

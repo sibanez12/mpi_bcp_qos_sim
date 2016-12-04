@@ -66,6 +66,14 @@ SERVER (?P<rank>[0-9]*) - THREAD ID: (?P<threadID>[0-9]*)
 --------------------------
 Num High Priority REQUEST msgs = (?P<numHPReqMsgs>[\d\.]*)
 Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
+---------------------------------
+High Priority S2S Requests Stats:
+  Minimum Time \(ns\) = (?P<minCT>[\d\.]*)
+  Maximum Time \(ns\) = (?P<maxCT>[\d\.]*)
+  Mean Time \(ns\) = (?P<meanCT>[\d\.]*)
+  Std Dev Time \(ns\) = (?P<stddevCT>[\d\.]*)
+  95-percentile Time \(ns\) = (?P<ninefiveCT>[\d\.]*)
+  99-percentile Time \(ns\) = (?P<ninenineCT>[\d\.]*)
 ###########################"""
         self.parse_results()
 
@@ -77,7 +85,7 @@ Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
                     self.parse_stats_log(fname, self.CLIENT)
                 elif (re.search("Client.*.hist", filename)):
                     self.parse_histogram_log(fname)
-                elif (re.search("Server", filename)):
+                elif (re.search("Server.*.log", filename)):
                     self.parse_stats_log(fname, self.SERVER)
 
     def parse_histogram_log(self, filename):
