@@ -48,6 +48,13 @@ typedef struct mpiMsg_s {
 	int threadID;
 } mpiMsg;
 
+typedef struct memReadChunk_s {
+	char data[BYTES_TO_READ];
+} memReadChunk;
+
+typedef struct memWriteChunk_s {
+	char data[BYTES_TO_WRITE];
+} memWriteChunk;
 
 typedef struct rankEntry_s {
 	int hostID;
@@ -129,10 +136,9 @@ void perform_memory_task(bigArray *data, int procTime, unsigned long int *seed);
 
 void perform_compute_task(int computeLoad);
 
-unsigned int readData(bigArray *data, unsigned int index, int bytesToRead);
+memReadChunk readData(bigArray *data, unsigned int index);
 
-void writeData(bigArray *data, unsigned int index, int bytesToWrite,
-		unsigned long int *seed);
+void writeData(bigArray *data, unsigned int index, unsigned long int *seed);
 
 int max_array(int a[], int num_elements);
 

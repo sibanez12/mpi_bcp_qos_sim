@@ -244,17 +244,17 @@ void perform_memory_task(bigArray *data, int memLoad, unsigned long int *seed) {
 	 */
 	unsigned int index;
 	unsigned long int randVal;
-	unsigned int val;
+	memReadChunk val;
 	for (int i = 0; i < memLoad; i++) {
 		randVal = myRandom(seed);
-		index = (randVal + val) % (data->size);
+		index = randVal % (data->size - BYTES_TO_READ - 1);
 		/* Read */
-		val = readData(data, index, BYTES_TO_READ);
+		val = readData(data, index);
 
 		randVal = myRandom(seed);
-		index = (randVal + val) % (data->size);
+		index = randVal % (data->size - BYTES_TO_WRITE - 1);
 		/* Write */
-		writeData(data, index, BYTES_TO_WRITE, seed);
+		writeData(data, index, seed);
 	}
 }
 
@@ -287,19 +287,39 @@ void perform_compute_task(int computeLoad) {
 	}
 }
 
-unsigned int readData(bigArray *data, unsigned int index, int bytesToRead) {
-	unsigned int result = 0;
-	for (unsigned int i = index; i < (index + bytesToRead); i++) {
-		result += data->array[i % data->size];
-	}
+memReadChunk readData(bigArray *data, unsigned int index) {
+//	unsigned int result = 0;
+//	for (unsigned int i = index; i < (index + bytesToRead); i++) {
+//		result += data->array[i % data->size];
+//	}
+
+	/* make sure that the data to read fits in the bigArray of data */
+	assert((data->size - index) > BYTES_TO_READ);
+
+	/* Read all of the chunkPtr at once */
+	memReadChunk *chunkPtr = (memReadChunk*) &(data->array[index]);
+	memReadChunk result = *chunkPtr;
 	return result;
 }
 
-void writeData(bigArray *data, unsigned int index, int bytesToWrite,
-		unsigned long int *seed) {
-	for (unsigned int i = index; i < (index + bytesToWrite); i++) {
-		data->array[i % data->size] = (char)myRandom(seed);
+void writeData(bigArray *data, unsigned int index, unsigned long int *seed) {
+//	for (unsigned int i = index; i < (index + bytesToWrite); i++) {
+//		data->array[i % data->size] = (char)myRandom(seed);
+//	}
+
+	/* make sure the data to write fits in the bigArray of data */
+	assert((data->size - index) > BYTES_TO_WRITE);
+
+	memWriteChunk *chunkPtr = (memWriteChunk*) &(data->array[index]);
+
+	char stuffToWrite[BYTES_TO_WRITE];
+	for (int i=0; i < BYTES_TO_WRITE; i++) {
+		stuffToWrite[i] = (char)myRandom(seed);
 	}
+
+	/* write the data */
+	memcpy(chunkPtr->data, stuffToWrite, BYTES_TO_WRITE);
+
 }
 
 
