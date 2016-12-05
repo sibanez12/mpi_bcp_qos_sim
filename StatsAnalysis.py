@@ -127,9 +127,12 @@ def aggregateStats(stats):
     aggStats['CDFData'] = stats.clientCDFData
 
     # Add the server stats
-    aggStats['serverNumLPReqs'] = sum(stats.serverStats["numLPReqMsgs"])
-    aggStats['serverNumHPReqs'] = sum(stats.serverStats["numHPReqMsgs"])
-    aggStats['serverMemBW'] = sum(stats.serverStats["memBytes"]) / float(avgRunTime)
+    numLPReqMsgs = sum(stats.serverStats["numLPReqMsgs"])
+    numHPReqMsgs = sum(stats.serverStats["numHPReqMsgs"])
+    aggStats['serverNumLPReqs'] = numLPReqMsgs
+    aggStats['serverNumHPReqs'] = numHPReqMsgs
+    aggStats['serverMemBW'] = sum(stats.serverStats['memBytes']) / float(avgRunTime)
+    aggStats['networkBW'] = sum(stats.serverStats['networkBytes']) / float(avgRunTime)
     aggStats['avgServerLPReqsSec'] = aggStats['serverNumLPReqs'] / float(avgRunTime)
     aggStats['serverNinefiveCT'] = max(stats.serverStats['ninefiveCT'])
     aggStats['serverNinenineCT'] = max(stats.serverStats['ninenineCT'])
@@ -256,6 +259,13 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs, no_cdfs=False):
     makePlot(finalAggStats, paramWithRange, rangeArgs, 'serverMemBW',
         "Server Memory Bandwidth (MB/s)", 'Server Memory Bandwidth vs. ' + paramWithRange,
         './plots/Server_memory_bandwidth_vs_' + paramWithRange, 1e-6)
+  
+    plt.cla()
+
+    # plot the network bandwidth 
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'networkBW',
+        "Network Bandwidth (Mb/s)", 'Server Memory Bandwidth vs. ' + paramWithRange,
+        './plots/network_bandwidth_vs_' + paramWithRange, 1e-6*8.0)
   
     plt.cla()
 
