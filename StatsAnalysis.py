@@ -129,6 +129,7 @@ def aggregateStats(stats):
     # Add the server stats
     aggStats['serverNumLPReqs'] = sum(stats.serverStats["numLPReqMsgs"])
     aggStats['serverNumHPReqs'] = sum(stats.serverStats["numHPReqMsgs"])
+    aggStats['serverMemBW'] = sum(stats.serverStats["memBytes"]) / float(avgRunTime)
     aggStats['avgServerLPReqsSec'] = aggStats['serverNumLPReqs'] / float(avgRunTime)
     aggStats['serverNinefiveCT'] = max(stats.serverStats['ninefiveCT'])
     aggStats['serverNinenineCT'] = max(stats.serverStats['ninenineCT'])
@@ -249,6 +250,13 @@ def plotResults(finalAggStats, paramWithRange, rangeArgs, no_cdfs=False):
         "Server 99-Percentile Completion Time ($\mu$s)", 'Server 99-Percentile Completion Time vs. ' + paramWithRange,
         './plots/Server_99_Completion_Time_vs_' + paramWithRange, 1e-3)
 
+    plt.cla()
+
+    # plot the server memory bandwidth 
+    makePlot(finalAggStats, paramWithRange, rangeArgs, 'serverMemBW',
+        "Server Memory Bandwidth (MB/s)", 'Server Memory Bandwidth vs. ' + paramWithRange,
+        './plots/Server_memory_bandwidth_vs_' + paramWithRange, 1e-6)
+  
     plt.cla()
 
     plt.close()

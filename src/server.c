@@ -352,12 +352,18 @@ void writeServerLog(serverThreadState *threadState) {
 	if (threadState->logFile_isOpen == true) {
 		int threadID = threadState->threadID;
 		int serverID = threadState->serverID;
+		int serverNetLoad = threadState->serverNetLoad;
+		int serverMemLoad = threadState->serverMemLoad;
+		unsigned long long numHPReqMsgs = threadState->numHPReqMsgs;
+		unsigned long long numLPReqMsgs = threadState->numLPReqMsgs;
+		unsigned long long memBytes = (numHPReqMsgs + numLPReqMsgs)*(serverNetLoad + 1)*serverMemLoad*(BYTES_TO_READ);
 		fprintf(threadState->logFile,
 				"###########################\n"
 				"SERVER %d - THREAD ID: %d\n"
 				"--------------------------\n"
 				"Num High Priority REQUEST msgs = %llu\n"
 				"Num Low Priority REQUEST msgs = %llu\n"
+				"Memory System Bytes Transferred = %llu\n"
 				"---------------------------------\n"
 				"High Priority S2S Requests Stats:\n"
 			        "  Minimum Time (ns) = %ld\n"
@@ -369,6 +375,7 @@ void writeServerLog(serverThreadState *threadState) {
 				"###########################\n",
 				serverID, threadID, threadState->numHPReqMsgs,
                                 threadState->numLPReqMsgs,
+								memBytes,
                                 hdr_min(threadState->histogram),
                                 hdr_max(threadState->histogram),
                                 hdr_mean(threadState->histogram),

@@ -66,6 +66,7 @@ SERVER (?P<rank>[0-9]*) - THREAD ID: (?P<threadID>[0-9]*)
 --------------------------
 Num High Priority REQUEST msgs = (?P<numHPReqMsgs>[\d\.]*)
 Num Low Priority REQUEST msgs = (?P<numLPReqMsgs>[\d\.]*)
+Memory System Bytes Transferred = (?P<memBytes>[\d.]*)
 ---------------------------------
 High Priority S2S Requests Stats:
   Minimum Time \(ns\) = (?P<minCT>[\d\.]*)
