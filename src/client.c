@@ -85,7 +85,7 @@ void runClient(int clientThreadsPerHost, int clientHPReqRate, int clientLPReqRat
 	hdr_init(
 			1,										// Minimum value = 1 ns
 			INT64_C(10000000000),	// Maximum value = 10 s
-			2,										// Number of significant figures after decimal
+			3,										// Number of significant figures after decimal
 			&(threadState.histogram) // Pointer to initialise
 	);
 	DEBUG_PRINT(("Initializing Histogram for client %d (%p) at %p\n", clientID, (void*)&threadState, (void*) &(threadState.histogram)));
